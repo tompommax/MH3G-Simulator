@@ -52,7 +52,7 @@ public sealed class SkillSystem
     public List<SkillActivation> Activations { get; init; } = [];
 }
 
-/// <summary>お守り。スキルは最大 2 系統。装備できるのは 1 つだけ (検索は登録分を 1 つずつ試す)。</summary>
+/// <summary>お守り。スキルは最大 2 系統。</summary>
 public sealed class Charm
 {
     public string Skill1 { get; set; } = "";

@@ -31,7 +31,7 @@ internal sealed class MainForm : Form
     private readonly ListBox skillListBox = new() { Dock = DockStyle.Fill, IntegralHeight = false };
     private readonly ListBox requirementListBox = new() { Dock = DockStyle.Fill, IntegralHeight = false };
 
-    // お守り (装備できるのは 1 つだけ)
+    // お守り
     private readonly CharmEditor charmEditor;
 
     // 実行・結果
@@ -141,7 +141,7 @@ internal sealed class MainForm : Form
     {
         var group = new GroupBox
         {
-            Text = "お守り (1 つだけ装備。スキル1 を「（なし）」でお守りなし・自動保存)",
+            Text = "お守り (スキル1 を「（なし）」でお守りなし・自動保存)",
             Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
         };
         group.Controls.Add(charmEditor);
