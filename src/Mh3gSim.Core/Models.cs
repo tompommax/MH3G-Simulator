@@ -52,11 +52,9 @@ public sealed class SkillSystem
     public List<SkillActivation> Activations { get; init; } = [];
 }
 
-/// <summary>お守り。スキルは最大 2 系統。</summary>
+/// <summary>お守り。スキルは最大 2 系統。装備できるのは 1 つだけ (検索は登録分を 1 つずつ試す)。</summary>
 public sealed class Charm
 {
-    /// <summary>護石の種類 (例: 天の護石)。空なら種類を指定しない入力。</summary>
-    public string Type { get; set; } = "";
     public string Skill1 { get; set; } = "";
     public int Points1 { get; set; }
     public string Skill2 { get; set; } = "";
@@ -78,11 +76,10 @@ public sealed class Charm
     {
         if (IsNone) return "なし";
         var parts = Skills().Select(s => $"{s.Key}{s.Value:+0;-0}");
-        var type = string.IsNullOrEmpty(Type) ? "" : Type + " ";
-        return $"{type}{string.Join(" ", parts)} [{new string('○', Slots)}{new string('－', 3 - Slots)}]";
+        return $"{string.Join(" ", parts)} [{new string('○', Slots)}{new string('－', 3 - Slots)}]";
     }
 
-    /// <summary>種類以外 (スキル・ポイント・スロット) が同じか。</summary>
+    /// <summary>スキル・ポイント・スロットが同じか。</summary>
     public bool SameContent(Charm other) =>
         Skill1 == other.Skill1 && Points1 == other.Points1 && Skill2 == other.Skill2
         && Points2 == other.Points2 && Slots == other.Slots;

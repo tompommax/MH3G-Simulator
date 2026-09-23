@@ -140,7 +140,7 @@ internal sealed class MainForm : Form
 
     private Control BuildCharmGroup()
     {
-        var group = new GroupBox { Text = "所持お守り (種類 → スキル → ポイントの順に選んで追加・自動保存)", Dock = DockStyle.Fill };
+        var group = new GroupBox { Text = "所持お守り (検索ではこの中から 1 つだけ選んで装備・自動保存)", Dock = DockStyle.Fill };
         group.Controls.Add(charmEditor);
         group.Controls.Add(includeNoCharmBox);
         includeNoCharmBox.Dock = DockStyle.Bottom;
