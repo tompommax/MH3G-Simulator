@@ -31,9 +31,8 @@ internal sealed class MainForm : Form
     private readonly ListBox skillListBox = new() { Dock = DockStyle.Fill, IntegralHeight = false };
     private readonly ListBox requirementListBox = new() { Dock = DockStyle.Fill, IntegralHeight = false };
 
-    // お守り
+    // お守り (装備できるのは 1 つだけ)
     private readonly CharmEditor charmEditor;
-    private readonly CheckBox includeNoCharmBox = new() { Text = "お守りなしも候補にする", Checked = true, AutoSize = true };
 
     // 実行・結果
     private readonly Button searchButton = new() { Text = "検索", Width = 110, Height = 32 };
@@ -52,7 +51,7 @@ internal sealed class MainForm : Form
     public MainForm()
     {
         searcher = new SkillSearcher(data);
-        charmEditor = new CharmEditor(data) { Dock = DockStyle.Fill };
+        charmEditor = new CharmEditor(data) { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
         Text = $"{AppTitle} v{AppVersion}";
         Font = new Font("Yu Gothic UI", 9.5f);
         ClientSize = new Size(1360, 820);
@@ -65,7 +64,7 @@ internal sealed class MainForm : Form
         split.Panel2.Controls.Add(BuildResultPanel());
 
         RefreshSkillList();
-        LoadCharms();
+        LoadCharm();
         UpdateExcludedLabel();
         statusLabel.Text = $"防具 {data.Armors.Count} / 装飾品 {data.Decorations.Count} / スキル系統 {data.SkillSystems.Count}";
     }
@@ -76,8 +75,8 @@ internal sealed class MainForm : Form
     {
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, Padding = new Padding(6) };
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 48));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var basic = new GroupBox { Text = "基本条件", Dock = DockStyle.Fill, AutoSize = true };
         var basicGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, AutoSize = true };
@@ -140,11 +139,13 @@ internal sealed class MainForm : Form
 
     private Control BuildCharmGroup()
     {
-        var group = new GroupBox { Text = "所持お守り (検索ではこの中から 1 つだけ選んで装備・自動保存)", Dock = DockStyle.Fill };
+        var group = new GroupBox
+        {
+            Text = "お守り (1 つだけ装備。スキル1 を「（なし）」でお守りなし・自動保存)",
+            Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+        };
         group.Controls.Add(charmEditor);
-        group.Controls.Add(includeNoCharmBox);
-        includeNoCharmBox.Dock = DockStyle.Bottom;
-        charmEditor.CharmsChanged += (_, _) => SaveCharms();
+        charmEditor.CharmChanged += (_, _) => SaveCharm();
         return group;
     }
 
@@ -253,11 +254,13 @@ internal sealed class MainForm : Form
 
     // ───────── お守り ─────────
 
-    private void LoadCharms() => charmEditor.SetCharms(CharmStore.Load());
+    /// <summary>保存済みのお守りを読み込む (以前の版で複数登録していた場合は先頭の 1 つを使う)。</summary>
+    private void LoadCharm() => charmEditor.SetCharm(CharmStore.Load().FirstOrDefault() ?? Charm.None);
 
-    private void SaveCharms()
+    private void SaveCharm()
     {
-        try { CharmStore.Save(charmEditor.Charms); }
+        var charm = charmEditor.Charm;
+        try { CharmStore.Save(charm.IsNone ? [] : [charm]); }
         catch (IOException exception) { statusLabel.Text = $"お守りの保存に失敗: {exception.Message}"; }
     }
 
@@ -291,15 +294,7 @@ internal sealed class MainForm : Form
             return;
         }
 
-        var charms = charmEditor.Charms.ToList();
-        var unknown = charms.SelectMany(c => c.Skills()).Select(c => c.Key)
-            .Where(name => data.FindSystem(name) == null).Distinct().ToList();
-        if (unknown.Count > 0)
-        {
-            MessageBox.Show(this, $"お守りのスキル名が見つかりません: {string.Join(", ", unknown)}", Text);
-            return;
-        }
-        if (includeNoCharmBox.Checked || charms.Count == 0) charms.Insert(0, Charm.None);
+        var charm = charmEditor.Charm;
         var condition = new SearchCondition
         {
             Requirements = requirements,
@@ -307,7 +302,7 @@ internal sealed class MainForm : Form
             IsFemale = genderBox.SelectedIndex == 1,
             MaxRarity = (int)rarityBox.Value,
             WeaponSlots = (int)weaponSlotBox.Value,
-            Charms = charms,
+            Charms = [charm],
             AvoidNegativeSkills = avoidNegativeBox.Checked,
             ExcludedArmorIds = [.. excludedArmorIds],
             MaxResults = (int)maxResultsBox.Value,

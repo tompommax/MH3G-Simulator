@@ -63,9 +63,7 @@ public static class ResultTextFormatter
         text.AppendLine("  スキル: " + string.Join("、", condition.Requirements.Select(r => $"{r.ActivationName}({r.System} {r.Points})")));
         text.AppendLine($"  職業: {(condition.IsGunner ? "ガンナー" : "剣士")} / 性別: {(condition.IsFemale ? "女" : "男")} / レア度上限: {condition.MaxRarity} / 武器スロット: {condition.WeaponSlots}");
         text.AppendLine($"  マイナススキル: {(condition.AvoidNegativeSkills ? "発動させない" : "発動を許す")}");
-        var charms = condition.Charms.Where(c => !c.IsNone).ToList();
-        text.AppendLine($"  お守り候補 (この中から 1 つを装備): {charms.Count} 個{(condition.Charms.Any(c => c.IsNone) ? " + お守りなし" : "")}");
-        foreach (var charm in charms) text.AppendLine($"    {charm}");
+        text.AppendLine($"  お守り: {string.Join(" / ", condition.Charms)}");
         text.AppendLine($"  結果: {results.Count} 件");
 
         for (var i = 0; i < results.Count; i++)

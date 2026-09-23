@@ -4,7 +4,7 @@ using Mh3gSim.Core;
 
 namespace Mh3gSim;
 
-/// <summary>登録したお守りを %APPDATA%\MH3GSkillSim\charms.json に保存する。</summary>
+/// <summary>装備するお守りを %APPDATA%\MH3GSkillSim\charms.json に保存する (1 つだけ。なしなら空の配列)。</summary>
 internal static class CharmStore
 {
     private static readonly string FilePath = Path.Combine(
