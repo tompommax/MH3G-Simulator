@@ -1,0 +1,17 @@
+<Project>
+
+  <PropertyGroup>
+    <Authors>TomPomMax</Authors>
+    <Company>TomPomMax</Company>
+    <Copyright>Copyright (c) 2026 TomPomMax</Copyright>
+    <!-- 公開物にビルド環境の絶対パスを残さない (ソース・PDB のパスをリポジトリ相対の /_/ に置き換える) -->
+    <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- 配布用ビルドにはデバッグ情報 (PDB パス) を埋め込まない -->
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+</Project>

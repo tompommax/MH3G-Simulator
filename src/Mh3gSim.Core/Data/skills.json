@@ -1,0 +1,1797 @@
+[
+{
+"system": "怒",
+"activations": [
+{
+"points": 10,
+"name": "逆鱗",
+"description": "体力が最大値の40%以下になると、攻撃力+30%、防御力+45、体力が64以上の時にそれを超えるダメージを受けても力尽きない、１度発動すると力尽きるまで再発動しない"
+}
+]
+},
+{
+"system": "射手",
+"activations": [
+{
+"points": 10,
+"name": "剛弾",
+"description": "通常弾・貫通弾・連射矢・貫通矢の攻撃力が1.1倍に上がる、またボウガンの散弾の攻撃力が1.2倍、拡散矢の攻撃力が1.3倍に上がる"
+}
+]
+},
+{
+"system": "運気",
+"activations": [
+{
+"points": 15,
+"name": "激運",
+"description": "クエストクリア報酬の枠数がとても多くなる"
+},
+{
+"points": 10,
+"name": "幸運",
+"description": "クエストクリア報酬の枠数が多くなる"
+},
+{
+"points": -10,
+"name": "不運",
+"description": "クエストクリア報酬の枠数が少なくなる"
+},
+{
+"points": -15,
+"name": "災難",
+"description": "クエストクリア報酬の枠数がとても少なくなる"
+}
+]
+},
+{
+"system": "運搬",
+"activations": [
+{
+"points": 10,
+"name": "運搬の達人",
+"description": "運搬時の移動速度が上昇、やや高いところ落ちても運搬物を落となくなる"
+}
+]
+},
+{
+"system": "泳ぎ",
+"activations": [
+{
+"points": 10,
+"name": "スイマー",
+"description": "水中でのダッシュ時の移動が早くなる"
+},
+{
+"points": -10,
+"name": "カナヅチ",
+"description": "水中での移動速度が低下する"
+}
+]
+},
+{
+"system": "ガード強化",
+"activations": [
+{
+"points": 10,
+"name": "ガード強化",
+"description": "ガード不能の攻撃がガードできるようになる"
+}
+]
+},
+{
+"system": "ガード性能",
+"activations": [
+{
+"points": 15,
+"name": "ガード性能+2",
+"description": "ガード時の後退を抑え、ガード時に受けるダメージを20軽減"
+},
+{
+"points": 10,
+"name": "ガード性能+1",
+"description": "ガード時の後退を抑え、ガード時に受けるダメージを10軽減"
+},
+{
+"points": -10,
+"name": "ガード性能-1",
+"description": "ガード時に後退しやすくなり、ガード時に受けるダメージが10増加"
+}
+]
+},
+{
+"system": "回避距離",
+"activations": [
+{
+"points": 10,
+"name": "回避距離UP",
+"description": "回転回避やステップの移動距離が長くなる"
+}
+]
+},
+{
+"system": "回避性能",
+"activations": [
+{
+"points": 15,
+"name": "回避性能+2",
+"description": "回転回避やステップの無敵時間がより長くなる"
+},
+{
+"points": 10,
+"name": "回避性能+1",
+"description": "回転回避やステップの無敵時間が長くなる"
+},
+{
+"points": -10,
+"name": "回避性能DOWN",
+"description": "回転回避やステップの無敵時間が短くなる"
+}
+]
+},
+{
+"system": "回復速度",
+"activations": [
+{
+"points": 15,
+"name": "回復速度+2",
+"description": "赤ゲージの回復速度がかなり早くなる"
+},
+{
+"points": 10,
+"name": "回復速度+1",
+"description": "赤ゲージの回復速度が速くなる"
+},
+{
+"points": -10,
+"name": "回復速度-1",
+"description": "回復速度が1/2になる"
+},
+{
+"points": -15,
+"name": "回復速度-2",
+"description": "回復速度が1/4になる"
+}
+]
+},
+{
+"system": "回復量",
+"activations": [
+{
+"points": 10,
+"name": "体力回復量UP",
+"description": "体力回復アイテムの回復量が増える"
+},
+{
+"points": -10,
+"name": "体力回復量DOWN",
+"description": "体力回復アイテムの回復量が減る"
+}
+]
+},
+{
+"system": "拡散弾追加",
+"activations": [
+{
+"points": 15,
+"name": "拡散弾全LV追加",
+"description": "全LVの拡散弾が使えるようになる"
+},
+{
+"points": 10,
+"name": "拡散弾LV1追加",
+"description": "LV1拡散弾が使えるようになる"
+}
+]
+},
+{
+"system": "加護",
+"activations": [
+{
+"points": 10,
+"name": "精霊の加護",
+"description": "25%の確率で受けるダメージが30%減少する"
+},
+{
+"points": -10,
+"name": "悪霊の加護",
+"description": "25%の確率で受けるダメージが30%増加する"
+}
+]
+},
+{
+"system": "雷属性攻撃",
+"activations": [
+{
+"points": 15,
+"name": "雷属性攻撃強化+2",
+"description": "雷属性の攻撃が1.2倍になる"
+},
+{
+"points": 10,
+"name": "雷属性攻撃強化+1",
+"description": "雷属性の攻撃が1.1倍になる"
+},
+{
+"points": -10,
+"name": "雷属性攻撃弱化",
+"description": "雷属性の攻撃が0.75倍になる"
+}
+]
+},
+{
+"system": "雷耐性",
+"activations": [
+{
+"points": 15,
+"name": "雷耐性【大】",
+"description": "雷耐性+20"
+},
+{
+"points": 10,
+"name": "雷耐性【小】",
+"description": "雷耐性+15"
+},
+{
+"points": -10,
+"name": "雷耐性弱化",
+"description": "雷耐性-10"
+}
+]
+},
+{
+"system": "狩人",
+"activations": [
+{
+"points": 10,
+"name": "ハンター生活",
+"description": "こんがり肉を焼きやすくなる、地図が無くてもマップが表示される、釣りで魚が最初の引きで食いつくようになる、釣り餌アイテムの調合が必ず成功する"
+}
+]
+},
+{
+"system": "観察眼",
+"activations": [
+{
+"points": 10,
+"name": "捕獲の見極め",
+"description": "大型モンスターをマーキングした時に捕獲できるタイミングでアイコンが点滅する"
+}
+]
+},
+{
+"system": "貫通弾強化",
+"activations": [
+{
+"points": 10,
+"name": "貫通弾・貫通矢UP",
+"description": "貫通弾、貫通矢の攻撃力が1.1倍に上がる"
+}
+]
+},
+{
+"system": "貫通弾追加",
+"activations": [
+{
+"points": 15,
+"name": "貫通弾全LV追加",
+"description": "全LVの貫通弾が使えるようになる"
+},
+{
+"points": 10,
+"name": "貫通弾LV1追加",
+"description": "LV1貫通弾が使えるようになる"
+}
+]
+},
+{
+"system": "気絶",
+"activations": [
+{
+"points": 15,
+"name": "気絶無効",
+"description": "気絶状態にならない"
+},
+{
+"points": 10,
+"name": "気絶半減",
+"description": "気絶状態を1/2の確率で無効化する"
+},
+{
+"points": -10,
+"name": "気絶倍加",
+"description": "気絶状態の時間が長くなる"
+}
+]
+},
+{
+"system": "気まぐれ",
+"activations": [
+{
+"points": 15,
+"name": "神の気まぐれ",
+"description": "ピッケル系・虫あみ系・笛系・ブーメラン・漁獲モリがかなり壊れにくくなる"
+},
+{
+"points": 10,
+"name": "精霊の気まぐれ",
+"description": "ピッケル系・虫あみ系・笛系・ブーメラン・漁獲モリが壊れにくくなる"
+},
+{
+"points": -10,
+"name": "悪霊の気まぐれ",
+"description": "ピッケル系・虫あみ系・笛系・ブーメラン・漁獲モリが壊れやすくなる"
+},
+{
+"points": -15,
+"name": "悪魔の気まぐれ",
+"description": "ピッケル系・虫あみ系・笛系・ブーメラン・漁獲モリが1/2の確率で壊れる"
+}
+]
+},
+{
+"system": "逆境",
+"activations": [
+{
+"points": 10,
+"name": "不屈",
+"description": "戦闘不能で攻撃力が増加する、1回力尽きると攻撃力10%・防御力15%上昇、2回力尽きると攻撃力20%・防御力30%上昇、効果は２回までしか適用されない"
+}
+]
+},
+{
+"system": "強撃瓶追加",
+"activations": [
+{
+"points": 10,
+"name": "強撃ビン追加",
+"description": "強撃ビンが使用可能になる"
+}
+]
+},
+{
+"system": "気力回復",
+"activations": [
+{
+"points": 10,
+"name": "スタミナ急速回復",
+"description": "スタミナの回復速度が2倍に上がる"
+},
+{
+"points": -10,
+"name": "スタミナ回復遅延",
+"description": "スタミナの回復速度が0.75倍に下がる"
+}
+]
+},
+{
+"system": "斬れ味",
+"activations": [
+{
+"points": 10,
+"name": "業物",
+"description": "攻撃がはじかれた時、ガンランスの砲撃、大剣のガードによる斬れ味低下が半分になる、攻撃がはじかれなかった時は1/2の確率で斬れ味が落ちなくなる"
+},
+{
+"points": -10,
+"name": "なまくら",
+"description": "斬れ味の消耗が2倍になる"
+}
+]
+},
+{
+"system": "食いしん坊",
+"activations": [
+{
+"points": 15,
+"name": "拾い食い",
+"description": "肉アイテム等のスタミナ最大値が更に25上昇し、特定アイテムを食べたときにスタミナ最大値が上がることがある"
+},
+{
+"points": 10,
+"name": "まんぷく",
+"description": "肉アイテム等のスタミナ最大値が更に25上昇する"
+}
+]
+},
+{
+"system": "KO",
+"activations": [
+{
+"points": 10,
+"name": "KO術",
+"description": "与えるめまいの蓄積値が増える"
+}
+]
+},
+{
+"system": "気配",
+"activations": [
+{
+"points": 10,
+"name": "隠密",
+"description": "モンスターに狙われにくくなる"
+},
+{
+"points": -10,
+"name": "挑発",
+"description": "モンスターに狙われやすくなる"
+}
+]
+},
+{
+"system": "減気攻撃",
+"activations": [
+{
+"points": 10,
+"name": "スタミナ奪取",
+"description": "減気攻撃で与えられる減気値が多くなる"
+}
+]
+},
+{
+"system": "減気瓶追加",
+"activations": [
+{
+"points": 10,
+"name": "減気ビン追加",
+"description": "減気ビンが使用可能になる"
+}
+]
+},
+{
+"system": "剣術",
+"activations": [
+{
+"points": 10,
+"name": "心眼",
+"description": "攻撃がはじかれる判定になってもはじかれモーションを取らなくなる"
+}
+]
+},
+{
+"system": "広域",
+"activations": [
+{
+"points": 20,
+"name": "広域化+2",
+"description": "薬草、回復薬、忍耐の種、怪力の種、解毒薬、ウチケシの実の効果が同じエリア内にいる他のハンター・お供にも効果が適用"
+},
+{
+"points": 10,
+"name": "広域化+1",
+"description": "薬草、回復薬、忍耐の種、怪力の種、解毒薬、ウチケシの実の効果が同じエリア内にいる他のハンターにも効果が適用、ただし解毒・ウチケシの実以外の回復量や効果は半分になる"
+}
+]
+},
+{
+"system": "効果持続",
+"activations": [
+{
+"points": 10,
+"name": "アイテム使用強化",
+"description": "薬、ドリンク、種、丸薬などのアイテムの効果持続時間が1.5倍になる"
+},
+{
+"points": -10,
+"name": "アイテム使用弱化",
+"description": "薬、ドリンク、種、丸薬などのアイテムの効果持続時間が2/3になる"
+}
+]
+},
+{
+"system": "抗菌",
+"activations": [
+{
+"points": 10,
+"name": "抗菌",
+"description": "一部のアイテム使用不可を無効化し、爆破やられにならない"
+}
+]
+},
+{
+"system": "攻撃",
+"activations": [
+{
+"points": 20,
+"name": "攻撃力UP【大】",
+"description": "攻撃力+20"
+},
+{
+"points": 15,
+"name": "攻撃力UP【中】",
+"description": "攻撃力+15"
+},
+{
+"points": 10,
+"name": "攻撃力UP【小】",
+"description": "攻撃力+10"
+},
+{
+"points": -10,
+"name": "攻撃力DOWN【小】",
+"description": "攻撃力-5"
+},
+{
+"points": -15,
+"name": "攻撃力DOWN【中】",
+"description": "攻撃力-10"
+},
+{
+"points": -20,
+"name": "攻撃力DOWN【大】",
+"description": "攻撃力-15"
+}
+]
+},
+{
+"system": "高速収集",
+"activations": [
+{
+"points": 10,
+"name": "高速収集",
+"description": "剥ぎ取り、採取、虫取り、採掘の動作が速くなる"
+}
+]
+},
+{
+"system": "高速設置",
+"activations": [
+{
+"points": 10,
+"name": "罠師",
+"description": "罠アイテム、爆弾(小タル爆弾と打ち上げタル爆弾以外)の設置時間が短くなる、さらに罠アイテムと肉アイテムの調合成功率が100％になる"
+}
+]
+},
+{
+"system": "号令",
+"activations": [
+{
+"points": 10,
+"name": "奇面王の呼び声",
+"description": "チャチャとカヤンバが地中に潜って休憩している状態でアクション「かけごえ」を使うと体力を全回復させて復帰する。実行後一定時間と「背水の陣」セット中は無効"
+}
+]
+},
+{
+"system": "氷属性攻撃",
+"activations": [
+{
+"points": 15,
+"name": "氷属性攻撃強化+2",
+"description": "氷属性の攻撃が1.2倍になる"
+},
+{
+"points": 10,
+"name": "氷属性攻撃強化+1",
+"description": "氷属性の攻撃が1.1倍になる"
+},
+{
+"points": -10,
+"name": "氷属性攻撃弱化",
+"description": "氷属性の攻撃が0.75倍になる"
+}
+]
+},
+{
+"system": "氷耐性",
+"activations": [
+{
+"points": 15,
+"name": "氷耐性【大】",
+"description": "氷耐性+20"
+},
+{
+"points": 10,
+"name": "氷耐性【小】",
+"description": "氷耐性+15"
+},
+{
+"points": -10,
+"name": "氷耐性弱化",
+"description": "氷耐性-10"
+}
+]
+},
+{
+"system": "護石王",
+"activations": [
+{
+"points": 10,
+"name": "お守りハンター",
+"description": "採掘でお守りを手に入れた時、2個入手できる時がある"
+}
+]
+},
+{
+"system": "こやし",
+"activations": [
+{
+"points": 10,
+"name": "こやし玉名人",
+"description": "こやし玉が必ず効くようになり、こやし玉の調合確率が100％になる"
+}
+]
+},
+{
+"system": "根性",
+"activations": [
+{
+"points": 10,
+"name": "根性",
+"description": "体力が64以上の時にそれを超えるダメージを受けても力尽きない、１度発動すると力尽きるまで再発動しない"
+}
+]
+},
+{
+"system": "細菌学",
+"activations": [
+{
+"points": 10,
+"name": "バイオドクター",
+"description": "こやし玉が必ず効く、こやし玉の調合確率が100％になる、一部のアイテム使用不可を無効化、爆破やられにならない"
+}
+]
+},
+{
+"system": "採取",
+"activations": [
+{
+"points": 15,
+"name": "採取+2",
+"description": "採取後次回も採取できる確率が大きく上昇"
+},
+{
+"points": 10,
+"name": "採取+1",
+"description": "採取後次回も採取できる確率が上昇しやすい"
+},
+{
+"points": -10,
+"name": "採取-1",
+"description": "採取後次回も採取できる確率が減少しやすい"
+}
+]
+},
+{
+"system": "采配",
+"activations": [
+{
+"points": 10,
+"name": "奇面王の采配",
+"description": "チャチャとカヤンバの攻撃力と防御力が上昇し(1.1倍)、スタミナ回復が早くなる(高)"
+}
+]
+},
+{
+"system": "酸素",
+"activations": [
+{
+"points": 10,
+"name": "酸素無限",
+"description": "水中で酸素を消費しなくなる"
+},
+{
+"points": -10,
+"name": "息継ぎ倍加",
+"description": "酸素の消費量が1.25倍に増える"
+}
+]
+},
+{
+"system": "散弾強化",
+"activations": [
+{
+"points": 10,
+"name": "散弾・拡散矢UP",
+"description": "散弾の攻撃力が1.2倍に、拡散矢の攻撃力が1.3倍に上がる"
+}
+]
+},
+{
+"system": "散弾追加",
+"activations": [
+{
+"points": 15,
+"name": "散弾全LV追加",
+"description": "全LVの散弾が使えるようになる"
+},
+{
+"points": 10,
+"name": "散弾LV1追加",
+"description": "LV1散弾が使えるようになる"
+}
+]
+},
+{
+"system": "斬裂弾追加",
+"activations": [
+{
+"points": 10,
+"name": "斬裂弾追加",
+"description": "斬裂弾が使用可能になる"
+}
+]
+},
+{
+"system": "自動防御",
+"activations": [
+{
+"points": 10,
+"name": "オートガード",
+"description": "抜刀中、ガード可能な状態ならば、攻撃を自動的にガードする"
+}
+]
+},
+{
+"system": "重撃",
+"activations": [
+{
+"points": 10,
+"name": "破壊王",
+"description": "部位破壊ダメージが1.3倍+1上昇する、体力には影響なく、破壊後にも効果なく、対巨龍用爆弾以外の爆弾には適用されない"
+}
+]
+},
+{
+"system": "状態耐性",
+"activations": [
+{
+"points": 10,
+"name": "護法",
+"description": "毒・麻痺・睡眠・気絶状態にならない"
+}
+]
+},
+{
+"system": "食事",
+"activations": [
+{
+"points": 15,
+"name": "早食い+2",
+"description": "肉とアイテムを食べる動作が速くなる"
+},
+{
+"points": 10,
+"name": "早食い+1",
+"description": "肉を食べる動作が速くなる"
+},
+{
+"points": -10,
+"name": "スローライフ",
+"description": "肉とアイテムを食べる動作が遅くなる"
+}
+]
+},
+{
+"system": "睡眠",
+"activations": [
+{
+"points": 10,
+"name": "睡眠無効",
+"description": "睡眠状態にならない"
+},
+{
+"points": -10,
+"name": "睡眠倍加",
+"description": "睡眠状態の時間が長くなる"
+}
+]
+},
+{
+"system": "睡眠瓶追加",
+"activations": [
+{
+"points": 10,
+"name": "睡眠ビン追加",
+"description": "睡眠ビンが使用可能になる"
+}
+]
+},
+{
+"system": "水流",
+"activations": [
+{
+"points": 15,
+"name": "水流【大】無効",
+"description": "水流【小】【大】の影響を無効化する"
+},
+{
+"points": 10,
+"name": "水流【小】無効",
+"description": "水流【小】の影響を無効化する。"
+}
+]
+},
+{
+"system": "スタミナ",
+"activations": [
+{
+"points": 10,
+"name": "ランナー",
+"description": "ダッシュ、鬼人状態、突進、溜め時のスタミナ消費量が半分になる"
+},
+{
+"points": -10,
+"name": "鈍足",
+"description": "ダッシュ、鬼人状態、突進、溜め時のスタミナ消費量が倍になる"
+}
+]
+},
+{
+"system": "精密射撃",
+"activations": [
+{
+"points": 15,
+"name": "ブレ抑制+2",
+"description": "弾道のブレがなくなる"
+},
+{
+"points": 10,
+"name": "ブレ抑制+1",
+"description": "弾道のブレが1段階減少する"
+},
+{
+"points": -10,
+"name": "ブレ抑制-1",
+"description": "弾道のブレが1段階増加する"
+},
+{
+"points": -15,
+"name": "ブレ抑制-2",
+"description": "弾道のブレが2段階増加する"
+}
+]
+},
+{
+"system": "接撃瓶追加",
+"activations": [
+{
+"points": 10,
+"name": "接撃ビン追加",
+"description": "接撃ビンが使用可能になる"
+}
+]
+},
+{
+"system": "千里眼",
+"activations": [
+{
+"points": 15,
+"name": "自動マーキング",
+"description": "常に大型モンスターの位置と向きと攻撃状態が表示される"
+},
+{
+"points": 10,
+"name": "探知",
+"description": "クエスト開始時は必ず、５分毎に2/3の確率で30秒間大型モンスターの位置と向きと攻撃状態が表示される、またペイントした場合自動マーキングと同じ表示になる"
+}
+]
+},
+{
+"system": "装填数",
+"activations": [
+{
+"points": 10,
+"name": "装填数UP",
+"description": "ボウガンの装填数、ガンランスの砲撃の装填数、弓の溜め段階が、1つ増加する"
+}
+]
+},
+{
+"system": "装填速度",
+"activations": [
+{
+"points": 20,
+"name": "装填速度+3",
+"description": "ボウガンのリロードが3段階速くなり、弓のビンを切り替えるだけで自動装着される"
+},
+{
+"points": 15,
+"name": "装填速度+2",
+"description": "ボウガンのリロードが2段階速くなり、弓のビンを切り替えるだけで自動装着される"
+},
+{
+"points": 10,
+"name": "装填速度+1",
+"description": "ボウガンのリロードが1段階早くなり、弓のビンの装着時間が0.75倍される"
+},
+{
+"points": -10,
+"name": "装填速度-1",
+"description": "ボウガンのリロードが1段階遅くなり、弓のビンの装着時間が1.1倍される"
+},
+{
+"points": -15,
+"name": "装填速度-2",
+"description": "ボウガンのリロードのリロードが2段階遅くなり、弓のビンの装着時間が1.2倍される"
+},
+{
+"points": -20,
+"name": "装填速度-3",
+"description": "ボウガンのリロードのリロードが3段階遅くなり、弓のビンの装着時間が1.3倍される"
+}
+]
+},
+{
+"system": "速射",
+"activations": [
+{
+"points": 10,
+"name": "連発数+1",
+"description": "速射時の発射数が+1される"
+}
+]
+},
+{
+"system": "属性解放",
+"activations": [
+{
+"points": 10,
+"name": "覚醒",
+"description": "無属性武器の隠された属性を解放するスキル"
+}
+]
+},
+{
+"system": "属性攻撃",
+"activations": [
+{
+"points": 10,
+"name": "属性攻撃強化",
+"description": "火、水、雷、氷、龍の属性値が1.2倍になる"
+},
+{
+"points": -10,
+"name": "属性攻撃弱化",
+"description": "火、水、雷、氷、龍の属性値が0.9倍になる"
+}
+]
+},
+{
+"system": "属性耐性",
+"activations": [
+{
+"points": 10,
+"name": "属性やられ無効",
+"description": "火・水・雷・氷・龍の属性やられを無効化する"
+}
+]
+},
+{
+"system": "底力",
+"activations": [
+{
+"points": 15,
+"name": "火事場力+2",
+"description": "体力が最大値の40%以下になると、防御力ボーナスが+30→+45に増加、攻撃力1.3倍"
+},
+{
+"points": 10,
+"name": "火事場力+1",
+"description": "体力が40%以下になると防御力ボーナスが+30→+45に増加"
+},
+{
+"points": -10,
+"name": "心配性",
+"description": "体力が40%以下になると防御力ボーナスが+30→+21に減少。攻撃力0.7倍"
+}
+]
+},
+{
+"system": "耐寒",
+"activations": [
+{
+"points": 10,
+"name": "寒さ無効",
+"description": "寒さによるスタミナ減少を無効化する"
+},
+{
+"points": -10,
+"name": "寒さ倍加",
+"description": "寒さによるスタミナ減少が速く"
+}
+]
+},
+{
+"system": "体術",
+"activations": [
+{
+"points": 15,
+"name": "体術+2",
+"description": "回避やガード時等のスタミナ消費が半分になる"
+},
+{
+"points": 10,
+"name": "体術+1",
+"description": "回避やガード時等のスタミナ消費が3/4になる"
+},
+{
+"points": -10,
+"name": "体術-1",
+"description": "回避やガード時等のスタミナ消費が増える"
+},
+{
+"points": -15,
+"name": "体術-2",
+"description": "回避やガード時等のスタミナ消費がかなり増える"
+}
+]
+},
+{
+"system": "耐暑",
+"activations": [
+{
+"points": 10,
+"name": "暑さ無効",
+"description": "暑さと溶岩地形によるダメージを無効化する"
+},
+{
+"points": -10,
+"name": "暑さ倍加",
+"description": "暑さと溶岩地形によるダメージが2倍になる"
+}
+]
+},
+{
+"system": "耐震",
+"activations": [
+{
+"points": 10,
+"name": "耐震",
+"description": "振動の影響を受けない"
+}
+]
+},
+{
+"system": "耐泥耐雪",
+"activations": [
+{
+"points": 10,
+"name": "泥＆雪無効",
+"description": "泥まみれ雪だるま状態にならない"
+}
+]
+},
+{
+"system": "対防御DOWN",
+"activations": [
+{
+"points": 10,
+"name": "鉄面皮",
+"description": "防御力DOWN状態を無効化"
+}
+]
+},
+{
+"system": "体力",
+"activations": [
+{
+"points": 15,
+"name": "体力+50",
+"description": ""
+},
+{
+"points": 10,
+"name": "体力+20",
+"description": ""
+},
+{
+"points": -10,
+"name": "体力-10",
+"description": ""
+},
+{
+"points": -15,
+"name": "体力-30",
+"description": ""
+}
+]
+},
+{
+"system": "匠",
+"activations": [
+{
+"points": 10,
+"name": "斬れ味レベル+1",
+"description": "斬れ味ゲージが伸びる"
+}
+]
+},
+{
+"system": "達人",
+"activations": [
+{
+"points": 20,
+"name": "見切り+3",
+"description": "会心率+30%"
+},
+{
+"points": 15,
+"name": "見切り+2",
+"description": "会心率+20%"
+},
+{
+"points": 10,
+"name": "見切り+1",
+"description": "会心率+10%"
+},
+{
+"points": -10,
+"name": "見切り-1",
+"description": "会心率-5%"
+},
+{
+"points": -15,
+"name": "見切り-2",
+"description": "会心率-10%"
+},
+{
+"points": -20,
+"name": "見切り-3",
+"description": "会心率-15%"
+}
+]
+},
+{
+"system": "溜め短縮",
+"activations": [
+{
+"points": 10,
+"name": "集中",
+"description": "大剣、ハンマー、弓の溜め時間が短くなり、太刀、双剣、スラッシュアックスのゲージが溜まりが速くなる"
+},
+{
+"points": -10,
+"name": "雑念",
+"description": "大剣、ハンマー、弓の溜め時間が長くなり、太刀、双剣、スラッシュアックスのゲージが溜まりが遅くなる"
+}
+]
+},
+{
+"system": "聴覚保護",
+"activations": [
+{
+"points": 15,
+"name": "高級耳栓",
+"description": "咆哮【小】と咆哮【大】の影響を受けない"
+},
+{
+"points": 10,
+"name": "耳栓",
+"description": "咆哮【小】の影響を受けない"
+}
+]
+},
+{
+"system": "調合数",
+"activations": [
+{
+"points": 10,
+"name": "最大数生産",
+"description": "調合の生産数が必ず最大になる"
+}
+]
+},
+{
+"system": "調合成功率",
+"activations": [
+{
+"points": 15,
+"name": "調合成功率+45%",
+"description": ""
+},
+{
+"points": 10,
+"name": "調合成功率+20%",
+"description": ""
+},
+{
+"points": -10,
+"name": "調合の成功率-10%",
+"description": ""
+},
+{
+"points": -15,
+"name": "調合の成功率-20%",
+"description": ""
+}
+]
+},
+{
+"system": "痛撃",
+"activations": [
+{
+"points": 10,
+"name": "弱点特効",
+"description": "肉質が45以上の部位を攻撃したとき、肉質に+5してダメージ計算が行われる"
+}
+]
+},
+{
+"system": "通常弾強化",
+"activations": [
+{
+"points": 10,
+"name": "通常弾・連射矢UP",
+"description": "通常弾、連射矢の攻撃力が1.1倍に上がる"
+}
+]
+},
+{
+"system": "通常弾追加",
+"activations": [
+{
+"points": 10,
+"name": "通常弾全LV追加",
+"description": "全LVの通常弾が使えるようになる"
+}
+]
+},
+{
+"system": "闘魂",
+"activations": [
+{
+"points": 15,
+"name": "挑戦者+2",
+"description": "同じエリア内の大型モンスターが怒ると、3秒後に攻撃力+25・会心率+20%"
+},
+{
+"points": 10,
+"name": "挑戦者+1",
+"description": "同じエリア内にいる大型モンスターが怒ると、３秒後に攻撃力+10・会心率+10%"
+}
+]
+},
+{
+"system": "刀匠",
+"activations": [
+{
+"points": 10,
+"name": "真打",
+"description": "斬れ味が一段階伸び、攻撃力UP【大】の効果(攻撃力UPスキルとは重複しない)"
+}
+]
+},
+{
+"system": "研ぎ師",
+"activations": [
+{
+"points": 10,
+"name": "砥石使用高速化",
+"description": "研ぐ動作が4回→1回に減る"
+},
+{
+"points": -10,
+"name": "砥石使用低速化",
+"description": "研ぐ動作が4回→5回に増える"
+}
+]
+},
+{
+"system": "毒",
+"activations": [
+{
+"points": 10,
+"name": "毒無効",
+"description": "毒、猛毒状態にならない"
+},
+{
+"points": -10,
+"name": "毒倍加",
+"description": "毒、猛毒状態の時間が長くなる"
+}
+]
+},
+{
+"system": "特殊攻撃",
+"activations": [
+{
+"points": 15,
+"name": "状態異常攻撃+2",
+"description": "毒、麻痺、睡眠、捕獲麻酔の蓄積値がかなり増加する"
+},
+{
+"points": 10,
+"name": "状態異常攻撃+1",
+"description": "毒、麻痺、睡眠、捕獲麻酔の蓄積値が増加する"
+},
+{
+"points": -10,
+"name": "毒、麻痺、睡眠、捕獲麻酔の蓄積値が減少する",
+"description": ""
+}
+]
+},
+{
+"system": "毒瓶追加",
+"activations": [
+{
+"points": 10,
+"name": "毒ビン追加",
+"description": "毒ビンが使用可能になる"
+}
+]
+},
+{
+"system": "肉食",
+"activations": [
+{
+"points": 10,
+"name": "お肉大好き",
+"description": "生肉が食べられるようになりスタミナ最大値が50上昇。また、生肉以外の肉アイテムで1分間強走効果がつく"
+}
+]
+},
+{
+"system": "盗み無効",
+"activations": [
+{
+"points": 10,
+"name": "盗み無効",
+"description": "アイテムを盗まれなくなる"
+}
+]
+},
+{
+"system": "燃鱗",
+"activations": [
+{
+"points": 10,
+"name": "燃鱗",
+"description": "たいまつをもった状態と同じ効果を小型モンスターに与える(暗闇を照らす効果はない)"
+}
+]
+},
+{
+"system": "納刀",
+"activations": [
+{
+"points": 10,
+"name": "納刀術",
+"description": "武器を納める動作が速くなる"
+}
+]
+},
+{
+"system": "剥ぎ取り",
+"activations": [
+{
+"points": 15,
+"name": "剥ぎ取り達人",
+"description": "剥ぎ取り回数が1回増加し、剥ぎ取り中にのけぞらなくなる"
+},
+{
+"points": 10,
+"name": "剥ぎ取り鉄人",
+"description": "剥ぎ取り中にのけぞらなくなる"
+}
+]
+},
+{
+"system": "爆弾強化",
+"activations": [
+{
+"points": 10,
+"name": "ボマー",
+"description": "自分の使う爆弾のダメージが増え、爆破属性の蓄積値が1.2倍に上昇し、爆弾系の調合成功率が100％になる　食事スキル「ネコの火薬術」と重複可"
+}
+]
+},
+{
+"system": "爆破弾追加",
+"activations": [
+{
+"points": 10,
+"name": "爆破弾追加",
+"description": "爆破弾が使用可能になる"
+}
+]
+},
+{
+"system": "爆破瓶追加",
+"activations": [
+{
+"points": 10,
+"name": "爆破ビン追加",
+"description": "爆破ビンが使用可能になる"
+}
+]
+},
+{
+"system": "ハチミツ",
+"activations": [
+{
+"points": 10,
+"name": "ハニーハンター",
+"description": "ハチミツやロイヤルハニーが一度に2個採取できる"
+}
+]
+},
+{
+"system": "抜刀会心",
+"activations": [
+{
+"points": 10,
+"name": "抜刀術【技】",
+"description": "武器出し攻撃時の会心率+100%"
+}
+]
+},
+{
+"system": "抜刀減気",
+"activations": [
+{
+"points": 10,
+"name": "抜刀術【力】",
+"description": "切断属性の攻撃でも武器出し攻撃時に減気値とめまい値にダメージを与える"
+}
+]
+},
+{
+"system": "腹減り",
+"activations": [
+{
+"points": 15,
+"name": "腹減り無効",
+"description": "スタミナゲージの最大値の減少がなくなる(凍土を除く)"
+},
+{
+"points": 10,
+"name": "腹減り半減",
+"description": "スタミナゲージの最大値の減少速度が半分になる(凍土を除く)"
+},
+{
+"points": -10,
+"name": "腹減り倍加【小】スタミナゲージの最大値の減少速度が速くなる",
+"description": ""
+},
+{
+"points": -15,
+"name": "腹減り倍加【大】",
+"description": "スタミナゲージの最大値の減少速度が更に速くなる"
+}
+]
+},
+{
+"system": "反動",
+"activations": [
+{
+"points": 20,
+"name": "反動軽減+3",
+"description": "ボウガンの反動が3段階小さくなる"
+},
+{
+"points": 15,
+"name": "反動軽減+2",
+"description": "ボウガンの反動が2段階小さくなる"
+},
+{
+"points": 10,
+"name": "反動軽減+1",
+"description": "ボウガンの反動が1段階小さくなる"
+},
+{
+"points": -10,
+"name": "反動軽減-1",
+"description": "ボウガンの反動が1段階大きくなる"
+},
+{
+"points": -15,
+"name": "反動軽減-2",
+"description": "ボウガンの反動が2段階大きくなる"
+},
+{
+"points": -20,
+"name": "反動軽減-3",
+"description": "ボウガンの反動が3段階大きくなる"
+}
+]
+},
+{
+"system": "飛距離",
+"activations": [
+{
+"points": 10,
+"name": "飛距離強化",
+"description": "緊急回避の飛距離が伸び、大型モンスターに向かって緊急回避ができるようになる"
+}
+]
+},
+{
+"system": "火属性攻撃",
+"activations": [
+{
+"points": 15,
+"name": "火属性攻撃強化+2",
+"description": "火属性の攻撃が1.2倍になる"
+},
+{
+"points": 10,
+"name": "火属性攻撃強化+1",
+"description": "火属性の攻撃が1.1倍になる"
+},
+{
+"points": -10,
+"name": "火属性攻撃弱化",
+"description": "火属性の攻撃が0.75倍になる"
+}
+]
+},
+{
+"system": "火耐性",
+"activations": [
+{
+"points": 15,
+"name": "火耐性【大】",
+"description": "火耐性+20"
+},
+{
+"points": 10,
+"name": "火耐性【小】",
+"description": "火耐性+15"
+},
+{
+"points": -10,
+"name": "火耐性弱化",
+"description": "火耐性-10"
+}
+]
+},
+{
+"system": "風圧",
+"activations": [
+{
+"points": 15,
+"name": "風圧【大】無効",
+"description": "風圧【小】と風圧【大】の影響を受けず、さらに強力な風圧の影響を軽減する"
+},
+{
+"points": 10,
+"name": "風圧【小】無効",
+"description": "風圧【小】の影響を受けない"
+}
+]
+},
+{
+"system": "笛",
+"activations": [
+{
+"points": 10,
+"name": "笛吹き名人",
+"description": "笛アイテムが壊れにくくなる、狩猟笛の演奏の効果時間が延び"
+}
+]
+},
+{
+"system": "不動",
+"activations": [
+{
+"points": 10,
+"name": "金剛体",
+"description": "被攻撃時に尻もち→のけぞり、ぶっとび【大】→【中】、に軽減される、また風圧【小】咆哮ひるみ【小】水流【小】を無効化する"
+}
+]
+},
+{
+"system": "防御",
+"activations": [
+{
+"points": 20,
+"name": "防御力UP【大】",
+"description": "防御力×1.1+10(少数切捨)"
+},
+{
+"points": 15,
+"name": "防御力UP【中】",
+"description": "防御力×1.05+10(少数切捨)"
+},
+{
+"points": 10,
+"name": "防御力UP【小】",
+"description": "防御力+10"
+},
+{
+"points": -10,
+"name": "防御力DOWN【小】",
+"description": "防御力-10"
+},
+{
+"points": -15,
+"name": "防御力DOWN【中】",
+"description": "防御力×0.95-10(少数切捨)"
+},
+{
+"points": -20,
+"name": "防御力DOWN【大】",
+"description": "防御力×0.9-10(少数切捨)"
+}
+]
+},
+{
+"system": "砲術",
+"activations": [
+{
+"points": 15,
+"name": "砲術王",
+"description": "バリスタ系、大砲、ガンランスの砲撃の威力が1.2倍、徹甲榴弾の威力が1.3倍に(属性補正含む)、竜撃砲の冷却時間が120秒から90秒に短縮"
+},
+{
+"points": 10,
+"name": "砲術師",
+"description": "バリスタ系、大砲、ガンランスの砲撃の威力が1.1倍、徹甲榴弾の攻撃力が1.15倍に(属性補正含む)"
+}
+]
+},
+{
+"system": "捕獲",
+"activations": [
+{
+"points": 15,
+"name": "捕獲名人",
+"description": "モンスター捕獲時の捕獲報酬枠がさらに多くなりやすい"
+},
+{
+"points": 10,
+"name": "捕獲達人",
+"description": "モンスター捕獲時の捕獲報酬枠が多くなりやすい"
+}
+]
+},
+{
+"system": "本気",
+"activations": [
+{
+"points": 15,
+"name": "力の解放+2",
+"description": "被ダメージの計が150毎か大型モンスターに発見された状態が5分間になる度に、90秒間会心率+50%・スタミナ消費1/4"
+},
+{
+"points": 10,
+"name": "力の解放+1",
+"description": "被ダメージの計が150毎か大型モンスターに発見された状態が5分間になる度に、90秒間会心率+30%・スタミナ消費1/2"
+}
+]
+},
+{
+"system": "麻痺",
+"activations": [
+{
+"points": 10,
+"name": "麻痺無効",
+"description": "麻痺状態にならない"
+},
+{
+"points": -10,
+"name": "麻痺倍加：麻痺状態の時間が長くなる",
+"description": ""
+}
+]
+},
+{
+"system": "麻痺瓶追加",
+"activations": [
+{
+"points": 10,
+"name": "麻痺ビン追加",
+"description": "麻痺ビンが使用可能になる"
+}
+]
+},
+{
+"system": "水属性攻撃",
+"activations": [
+{
+"points": 15,
+"name": "水属性攻撃強化+2",
+"description": "水属性の攻撃が1.2倍になる"
+},
+{
+"points": 10,
+"name": "水属性攻撃強化+1",
+"description": "水属性の攻撃が1.1倍になる"
+},
+{
+"points": -10,
+"name": "水属性攻撃弱化",
+"description": "水属性の攻撃が0.75倍になる"
+}
+]
+},
+{
+"system": "水耐性",
+"activations": [
+{
+"points": 15,
+"name": "水耐性【大】",
+"description": "水耐性+20"
+},
+{
+"points": 10,
+"name": "水耐性【小】",
+"description": "水耐性+15"
+},
+{
+"points": -10,
+"name": "水耐性弱化",
+"description": "水耐性-10"
+}
+]
+},
+{
+"system": "水の心",
+"activations": [
+{
+"points": 10,
+"name": "水神の加護",
+"description": "酸素が減らなくなり、泳ぎの速度が速くなり、水流【大】【小】をの影響を無効化する"
+}
+]
+},
+{
+"system": "無傷",
+"activations": [
+{
+"points": 10,
+"name": "フルチャージ",
+"description": "体力ゲージが満タンの時に基本攻撃力+20"
+}
+]
+},
+{
+"system": "龍属性攻撃",
+"activations": [
+{
+"points": 15,
+"name": "龍属性攻撃強化+2",
+"description": "龍属性の攻撃が1.2倍になる"
+},
+{
+"points": 10,
+"name": "龍属性攻撃強化+1",
+"description": "龍属性の攻撃が1.1倍になる"
+},
+{
+"points": -10,
+"name": "龍属性攻撃弱化",
+"description": "龍属性の攻撃が0.75倍になる"
+}
+]
+},
+{
+"system": "龍耐性",
+"activations": [
+{
+"points": 15,
+"name": "龍耐性【大】",
+"description": "龍耐性+20"
+},
+{
+"points": 10,
+"name": "龍耐性【小】",
+"description": "龍耐性+15"
+},
+{
+"points": -10,
+"name": "龍耐性弱化",
+"description": "龍耐性-10"
+}
+]
+},
+{
+"system": "榴弾追加",
+"activations": [
+{
+"points": 15,
+"name": "徹甲榴弾全LV追加",
+"description": "全LVの徹甲榴弾が使えるようになる"
+},
+{
+"points": 10,
+"name": "徹甲榴弾LV1追加",
+"description": "LV1徹甲榴弾が使えるようになる"
+}
+]
+}
+]
