@@ -3,7 +3,13 @@ using Mh3gSim.Core;
 
 // 検索ロジックの速度・結果を確認するためのベンチ。引数: 系統:ポイント ... [--gunner] [--rare N] [--weapon N]
 Console.OutputEncoding = System.Text.Encoding.UTF8;
-var data = GameData.LoadEmbedded();
+GameData data;
+try { data = GameData.LoadEmbedded(); }
+catch (DataLoadException exception)
+{
+    Console.WriteLine("check-data: NG (読み込み失敗)\n  " + exception.Message);
+    return 1;
+}
 var requirements = args.Where(a => a.Contains(':') && !a.StartsWith("charm=")).Select(a =>
 {
     var pieces = a.Split(':');
@@ -45,26 +51,17 @@ if (args.Contains("--solver-test"))
     // 穴に収まらない時は見つからないこと (偽陽性の確認): 同条件で 3 穴 x2 (6 スロット) では不成立
     var tightSolution = codexSolver.Solve([0, 0], [0, 0, 0, 2], 0, 1, _ => true);
     Console.WriteLine(tightSolution == null ? "solver-test3: correctly not found" : "solver-test3: FALSE POSITIVE");
-    return;
+    return 0;
 }
 if (args.Contains("--check-data"))
 {
-    // お守り表の整合チェック: スキル名がスキル系統に存在する / スロット上限・第 2 スキル下限が妥当 / 種類名が重複しない
-    var systemNames = data.SkillSystems.Select(s => s.System).ToHashSet();
-    var problems = new List<string>();
+    // データファイル (src/Mh3gSim.Core/Data/*.json) を手で直した後の整合チェック。NG なら終了コード 1
+    var problems = DataValidator.Validate(data);
+    Console.WriteLine($"防具 {data.Armors.Count} / 装飾品 {data.Decorations.Count} / スキル系統 {data.SkillSystems.Count} / お守り系統 {data.CharmCategories.Count}");
     foreach (var category in data.CharmCategories)
-    {
-        problems.AddRange(category.Skills.Keys.Where(k => !systemNames.Contains(k)).Select(k => $"{category.Name}: 未知のスキル {k}"));
-        problems.AddRange(category.Skills.Where(kv => kv.Value is < 1 or > 20).Select(kv => $"{category.Name}: {kv.Key} の最大値が範囲外 {kv.Value}"));
-        if (category.MaxSlots is < 0 or > 3) problems.Add($"{category.Name}: スロット上限 {category.MaxSlots}");
-        if (category.SecondSkill ? category.SecondSkillMin >= 0 : category.SecondSkillMin != 0) problems.Add($"{category.Name}: 第 2 スキル下限 {category.SecondSkillMin}");
-        if (category.Types.Count == 0) problems.Add($"{category.Name}: 種類が無い");
-        Console.WriteLine($"{category.Name}: 種類 {string.Join("/", category.Types)} / スキル {category.Skills.Count} / スロット 0-{category.MaxSlots} / 第2スキル {(category.SecondSkill ? $"あり (下限 {category.SecondSkillMin})" : "なし")}");
-    }
-    var duplicateTypes = data.CharmCategories.SelectMany(c => c.Types).GroupBy(t => t).Where(g => g.Count() > 1).Select(g => g.Key);
-    problems.AddRange(duplicateTypes.Select(t => $"種類名の重複: {t}"));
+        Console.WriteLine($"  {category.Name}: {string.Join("/", category.Types)} / スキル {category.Skills.Count} / スロット 0-{category.MaxSlots}");
     Console.WriteLine(problems.Count == 0 ? "check-data: OK" : "check-data: NG\n  " + string.Join("\n  ", problems));
-    return;
+    return problems.Count == 0 ? 0 : 1;
 }
 if (args.Contains("--scan"))
 {
@@ -129,7 +126,7 @@ if (args.Contains("--scan"))
             Console.WriteLine($"{system.System}: brute(avoid) {avoidBest} brute(allow) {allowBest} searcher {searchedKey}{(searchedKey != avoidBest ? "  <-- MISMATCH" : "")}");
     }
     Console.WriteLine($"scan done: negative-affected cases {negativeCases}, mismatches {mismatches}");
-    return;
+    return 0;
 }
 var watch = Stopwatch.StartNew();
 var outcome = new SkillSearcher(data).Search(condition, null, CancellationToken.None);
@@ -209,3 +206,4 @@ if (args.Contains("--brute"))
     }
     Console.WriteLine($"verify: {results.Count - broken}/{results.Count} results satisfy requirements");
 }
+return 0;

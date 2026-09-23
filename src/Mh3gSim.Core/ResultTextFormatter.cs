@@ -7,7 +7,6 @@ public static class ResultTextFormatter
 {
     private const int EquivalentsShown = 6;
     private const int PointsPerLine = 6;
-    private static readonly string[] ResistNames = ["火", "水", "氷", "雷", "龍"];
 
     /// <summary>1 件分の詳細 (防具・お守り・装飾品・発動スキル・耐性・スキルポイント)。</summary>
     public static string FormatResult(SearchResult result, int weaponSlots)
@@ -44,7 +43,7 @@ public static class ResultTextFormatter
 
         text.AppendLine("■ 耐性");
         var resist = result.Resist;
-        text.AppendLine("  " + string.Join("  ", ResistNames.Select((n, i) => $"{n}{resist[i]:+0;-0;0}")));
+        text.AppendLine("  " + string.Join("  ", GameData.ResistNames.Select((n, i) => $"{n}{resist[i]:+0;-0;0}")));
         text.AppendLine();
 
         text.AppendLine("■ スキルポイント合計");
