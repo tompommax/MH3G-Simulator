@@ -11,6 +11,7 @@ public sealed class GameData
     public required IReadOnlyList<Armor> Armors { get; init; }
     public required IReadOnlyList<Decoration> Decorations { get; init; }
     public required IReadOnlyList<SkillSystem> SkillSystems { get; init; }
+    public required IReadOnlyList<CharmCategory> CharmCategories { get; init; }
 
     public static GameData LoadEmbedded()
     {
@@ -19,10 +20,15 @@ public sealed class GameData
             Armors = Load<List<Armor>>("armors.json"),
             Decorations = Load<List<Decoration>>("decorations.json"),
             SkillSystems = Load<List<SkillSystem>>("skills.json"),
+            CharmCategories = Load<List<CharmCategory>>("charms.json"),
         };
     }
 
     public SkillSystem? FindSystem(string name) => SkillSystems.FirstOrDefault(s => s.System == name);
+
+    /// <summary>護石の種類名 (例: 天の護石) から系統を引く。見つからなければ null。</summary>
+    public CharmCategory? FindCharmCategory(string type) =>
+        CharmCategories.FirstOrDefault(c => c.Types.Contains(type));
 
     /// <summary>系統合計ポイントから発動スキルを求める (マイナススキル含む)。</summary>
     public List<ActiveSkill> ResolveActiveSkills(IReadOnlyDictionary<string, int> totals)

@@ -55,6 +55,8 @@ public sealed class SkillSystem
 /// <summary>お守り。スキルは最大 2 系統。</summary>
 public sealed class Charm
 {
+    /// <summary>護石の種類 (例: 天の護石)。空なら種類を指定しない入力。</summary>
+    public string Type { get; set; } = "";
     public string Skill1 { get; set; } = "";
     public int Points1 { get; set; }
     public string Skill2 { get; set; } = "";
@@ -76,8 +78,29 @@ public sealed class Charm
     {
         if (IsNone) return "なし";
         var parts = Skills().Select(s => $"{s.Key}{s.Value:+0;-0}");
-        return $"{string.Join(" ", parts)} [{new string('○', Slots)}{new string('－', 3 - Slots)}]";
+        var type = string.IsNullOrEmpty(Type) ? "" : Type + " ";
+        return $"{type}{string.Join(" ", parts)} [{new string('○', Slots)}{new string('－', 3 - Slots)}]";
     }
+
+    /// <summary>種類以外 (スキル・ポイント・スロット) が同じか。</summary>
+    public bool SameContent(Charm other) =>
+        Skill1 == other.Skill1 && Points1 == other.Points1 && Skill2 == other.Skill2
+        && Points2 == other.Points2 && Slots == other.Slots;
+}
+
+/// <summary>
+/// お守りの系統 (鑑定前の名前) ごとの出現ルール。鑑定後の護石の種類はこのどれかに属する。
+/// Skills は「付き得るスキル → 最大ポイント」。
+/// </summary>
+public sealed class CharmCategory
+{
+    public string Name { get; init; } = "";
+    public List<string> Types { get; init; } = [];
+    public int MaxSlots { get; init; }
+    public bool SecondSkill { get; init; }
+    /// <summary>第 2 スキルのマイナス側の下限 (第 2 スキルが無い系統は 0)。</summary>
+    public int SecondSkillMin { get; init; }
+    public Dictionary<string, int> Skills { get; init; } = [];
 }
 
 public sealed record SkillRequirement(string System, int Points, string ActivationName);

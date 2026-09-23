@@ -7,12 +7,15 @@ namespace Mh3gSim;
 internal sealed class MainForm : Form
 {
     private const int MaxRequirements = 10;
-    private static readonly string[] ResistNames = ["火", "水", "氷", "雷", "龍"];
+    private const string AppTitle = "MH3G スキルシミュレーター";
+    private static readonly string AppVersion = FormatVersion(typeof(MainForm).Assembly.GetName().Version);
 
     private readonly GameData data = GameData.LoadEmbedded();
     private readonly SkillSearcher searcher;
     private readonly HashSet<int> excludedArmorIds = [];
     private List<SearchResult> results = [];
+    /// <summary>表示中の結果を出した検索条件 (詳細表示・保存は画面の今の入力ではなくこれを使う)。</summary>
+    private SearchCondition? lastCondition;
     private CancellationTokenSource? searchCancellation;
 
     // 条件
@@ -29,12 +32,13 @@ internal sealed class MainForm : Form
     private readonly ListBox requirementListBox = new() { Dock = DockStyle.Fill, IntegralHeight = false };
 
     // お守り
-    private readonly DataGridView charmGrid = new();
+    private readonly CharmEditor charmEditor;
     private readonly CheckBox includeNoCharmBox = new() { Text = "お守りなしも候補にする", Checked = true, AutoSize = true };
 
     // 実行・結果
     private readonly Button searchButton = new() { Text = "検索", Width = 110, Height = 32 };
     private readonly Button cancelButton = new() { Text = "中止", Width = 80, Height = 32, Enabled = false };
+    private readonly Button exportButton = new() { Text = "テキスト保存", Width = 110, Height = 32, Enabled = false };
     private readonly ProgressBar progressBar = new() { Width = 180, Height = 20 };
     private readonly Label statusLabel = new() { AutoSize = true, Padding = new Padding(0, 6, 0, 0) };
     private readonly Label excludedLabel = new() { AutoSize = true, Padding = new Padding(0, 6, 0, 0) };
@@ -48,7 +52,8 @@ internal sealed class MainForm : Form
     public MainForm()
     {
         searcher = new SkillSearcher(data);
-        Text = "MH3G スキルシミュレーター";
+        charmEditor = new CharmEditor(data) { Dock = DockStyle.Fill };
+        Text = $"{AppTitle} v{AppVersion}";
         Font = new Font("Yu Gothic UI", 9.5f);
         ClientSize = new Size(1360, 820);
         StartPosition = FormStartPosition.CenterScreen;
@@ -71,8 +76,8 @@ internal sealed class MainForm : Form
     {
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, Padding = new Padding(6) };
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 62));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 38));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 48));
 
         var basic = new GroupBox { Text = "基本条件", Dock = DockStyle.Fill, AutoSize = true };
         var basicGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, AutoSize = true };
@@ -135,39 +140,11 @@ internal sealed class MainForm : Form
 
     private Control BuildCharmGroup()
     {
-        var group = new GroupBox { Text = "所持お守り (行を追加して入力・自動保存)", Dock = DockStyle.Fill };
-        var systemNames = new AutoCompleteStringCollection();
-        systemNames.AddRange(data.SkillSystems.Select(s => s.System).ToArray());
-
-        charmGrid.Dock = DockStyle.Fill;
-        charmGrid.AllowUserToAddRows = true;
-        charmGrid.RowHeadersWidth = 24;
-        charmGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        charmGrid.Columns.Add(SkillColumn("Skill1", "スキル1"));
-        charmGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Points1", HeaderText = "pt", FillWeight = 35 });
-        charmGrid.Columns.Add(SkillColumn("Skill2", "スキル2"));
-        charmGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Points2", HeaderText = "pt", FillWeight = 35 });
-        charmGrid.Columns.Add(new DataGridViewComboBoxColumn
-        {
-            Name = "Slots", HeaderText = "ｽﾛｯﾄ", FillWeight = 45, DataSource = new[] { "0", "1", "2", "3" },
-            DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton,
-        });
-        charmGrid.EditingControlShowing += (_, e) =>
-        {
-            // スキル列は系統名を入力補完する
-            if (e.Control is not TextBox editor) return;
-            var isSkillColumn = charmGrid.CurrentCell?.OwningColumn?.Name is "Skill1" or "Skill2";
-            editor.AutoCompleteMode = isSkillColumn ? AutoCompleteMode.SuggestAppend : AutoCompleteMode.None;
-            editor.AutoCompleteSource = isSkillColumn ? AutoCompleteSource.CustomSource : AutoCompleteSource.None;
-            if (isSkillColumn) editor.AutoCompleteCustomSource = systemNames;
-        };
-        charmGrid.CellEndEdit += (_, _) => SaveCharms();
-        charmGrid.UserDeletedRow += (_, _) => SaveCharms();
-        charmGrid.DataError += (_, e) => e.ThrowException = false;
-
-        group.Controls.Add(charmGrid);
+        var group = new GroupBox { Text = "所持お守り (種類 → スキル → ポイントの順に選んで追加・自動保存)", Dock = DockStyle.Fill };
+        group.Controls.Add(charmEditor);
         group.Controls.Add(includeNoCharmBox);
         includeNoCharmBox.Dock = DockStyle.Bottom;
+        charmEditor.CharmsChanged += (_, _) => SaveCharms();
         return group;
     }
 
@@ -176,7 +153,7 @@ internal sealed class MainForm : Form
         var panel = new Panel { Dock = DockStyle.Fill };
         var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 44, Padding = new Padding(6), WrapContents = false };
         var clearExcludedButton = new Button { Text = "除外を解除", Width = 100, Height = 32 };
-        toolbar.Controls.AddRange([searchButton, cancelButton, progressBar, statusLabel, clearExcludedButton, excludedLabel]);
+        toolbar.Controls.AddRange([searchButton, cancelButton, progressBar, statusLabel, exportButton, clearExcludedButton, excludedLabel]);
         progressBar.Margin = new Padding(6, 8, 6, 0);
 
         var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal };
@@ -189,6 +166,7 @@ internal sealed class MainForm : Form
         ConfigureResultGrid();
         searchButton.Click += async (_, _) => await RunSearchSafelyAsync();
         cancelButton.Click += (_, _) => searchCancellation?.Cancel();
+        exportButton.Click += (_, _) => SaveAllResults();
         clearExcludedButton.Click += (_, _) => { excludedArmorIds.Clear(); UpdateExcludedLabel(); };
         return panel;
     }
@@ -210,7 +188,8 @@ internal sealed class MainForm : Form
         resultGrid.Columns.Add("Free", "空きスロット");
         resultGrid.Columns["No"]!.FillWeight = 40;
         resultGrid.Columns["Defense"]!.FillWeight = 85;
-        resultGrid.SelectionChanged += (_, _) => ShowSelectedDetail();
+        // 詳細は「現在行」に合わせる (右クリックで現在行を移した時も追従させるため SelectionChanged ではなくこちら)
+        resultGrid.CurrentCellChanged += (_, _) => ShowSelectedDetail();
 
         var menu = new ContextMenuStrip();
         for (var part = 0; part < ArmorParts.Count; part++)
@@ -218,10 +197,16 @@ internal sealed class MainForm : Form
             var index = part;
             menu.Items.Add($"この{ArmorParts.Names[part]}防具を除外して再検索", null, async (_, _) => await ExcludeAndSearch(index));
         }
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add("この結果をコピー", null, (_, _) => CopySelectedResult());
+        menu.Items.Add("この結果をテキスト保存", null, (_, _) => SaveSelectedResult());
         resultGrid.ContextMenuStrip = menu;
         resultGrid.CellMouseDown += (_, e) =>
         {
-            if (e.Button == MouseButtons.Right && e.RowIndex >= 0) resultGrid.Rows[e.RowIndex].Selected = true;
+            // 右クリックした行を「現在行」にする (Selected だけ変えると CurrentRow が前の行のままで、
+            // 右クリックメニューのコピー・除外が別の行に効いてしまう)
+            if (e.Button != MouseButtons.Right || e.RowIndex < 0) return;
+            resultGrid.CurrentCell = resultGrid.Rows[e.RowIndex].Cells[Math.Max(0, e.ColumnIndex)];
         };
     }
 
@@ -268,34 +253,11 @@ internal sealed class MainForm : Form
 
     // ───────── お守り ─────────
 
-    private void LoadCharms()
-    {
-        foreach (var charm in CharmStore.Load())
-            charmGrid.Rows.Add(charm.Skill1, charm.Points1.ToString(), charm.Skill2, charm.Points2.ToString(), charm.Slots.ToString());
-    }
-
-    private List<Charm> ReadCharms()
-    {
-        var charms = new List<Charm>();
-        foreach (DataGridViewRow row in charmGrid.Rows)
-        {
-            if (row.IsNewRow) continue;
-            var charm = new Charm
-            {
-                Skill1 = (row.Cells["Skill1"].Value as string ?? "").Trim(),
-                Points1 = ParseInt(row.Cells["Points1"].Value),
-                Skill2 = (row.Cells["Skill2"].Value as string ?? "").Trim(),
-                Points2 = ParseInt(row.Cells["Points2"].Value),
-                Slots = Math.Clamp(ParseInt(row.Cells["Slots"].Value), 0, 3),
-            };
-            if (!charm.IsNone) charms.Add(charm);
-        }
-        return charms;
-    }
+    private void LoadCharms() => charmEditor.SetCharms(CharmStore.Load());
 
     private void SaveCharms()
     {
-        try { CharmStore.Save(ReadCharms()); }
+        try { CharmStore.Save(charmEditor.Charms); }
         catch (IOException exception) { statusLabel.Text = $"お守りの保存に失敗: {exception.Message}"; }
     }
 
@@ -329,7 +291,7 @@ internal sealed class MainForm : Form
             return;
         }
 
-        var charms = ReadCharms();
+        var charms = charmEditor.Charms.ToList();
         var unknown = charms.SelectMany(c => c.Skills()).Select(c => c.Key)
             .Where(name => data.FindSystem(name) == null).Distinct().ToList();
         if (unknown.Count > 0)
@@ -360,6 +322,7 @@ internal sealed class MainForm : Form
         {
             var outcome = await Task.Run(() => searcher.Search(condition, progress, token), token);
             results = outcome.Results;
+            lastCondition = condition;
             statusLabel.Text = $"{results.Count} 件 ({watch.Elapsed.TotalSeconds:0.0} 秒)"
                 + (outcome.TruncatedSolves > 0 ? $"  ※珠の探索を {outcome.TruncatedSolves} 構成で打ち切り (見落としの可能性あり)" : "");
         }
@@ -378,12 +341,14 @@ internal sealed class MainForm : Form
     {
         searchButton.Enabled = !searching;
         cancelButton.Enabled = searching;
+        exportButton.Enabled = !searching && results.Count > 0;
         progressBar.Value = 0;
         if (searching) statusLabel.Text = "検索中…";
     }
 
     private void ShowResults()
     {
+        exportButton.Enabled = results.Count > 0;
         resultGrid.Rows.Clear();
         for (var i = 0; i < results.Count; i++)
         {
@@ -407,52 +372,58 @@ internal sealed class MainForm : Form
         ? ""
         : "除外中: " + string.Join(", ", data.Armors.Where(a => excludedArmorIds.Contains(a.Id)).Select(a => a.Name));
 
-    // ───────── 詳細表示 ─────────
+    // ───────── 詳細表示・テキスト出力 ─────────
 
     private void ShowSelectedDetail()
     {
-        if (SelectedResult() is { } result) detailBox.Text = FormatDetail(result);
+        if (SelectedResult() is { } result) detailBox.Text = FormatSelected(result);
     }
 
-    private string FormatDetail(SearchResult result)
+    private string FormatSelected(SearchResult result) =>
+        ResultTextFormatter.FormatResult(result, lastCondition?.WeaponSlots ?? 0);
+
+    private void CopySelectedResult()
     {
-        var text = new StringBuilder();
-        text.AppendLine($"■ 防具   防御力 {result.Defense} → 最終 {result.MaxDefense}");
-        for (var part = 0; part < ArmorParts.Count; part++)
+        if (SelectedResult() is not { } result) return;
+        Clipboard.SetText(FormatSelected(result));
+        statusLabel.Text = "選択中の結果をコピーしました";
+    }
+
+    private void SaveSelectedResult()
+    {
+        if (SelectedResult() is not { } result) return;
+        var number = results.IndexOf(result) + 1;
+        var content = $"{AppTitle} v{AppVersion}  No.{number}{Environment.NewLine}{Environment.NewLine}{FormatSelected(result)}";
+        SaveText($"MH3G装備_No{number}_{DateTime.Now:yyyyMMdd_HHmm}.txt", content);
+    }
+
+    private void SaveAllResults()
+    {
+        if (lastCondition == null || results.Count == 0) return;
+        var title = $"{AppTitle} v{AppVersion} 検索結果 ({DateTime.Now:yyyy-MM-dd HH:mm})";
+        SaveText($"MH3G検索結果_{DateTime.Now:yyyyMMdd_HHmm}.txt", ResultTextFormatter.FormatExport(lastCondition, results, title));
+    }
+
+    private void SaveText(string defaultFileName, string content)
+    {
+        using var dialog = new SaveFileDialog
         {
-            var armor = result.Armors[part];
-            var slots = new string('○', armor.Slots) + new string('－', 3 - armor.Slots);
-            var skills = string.Join(" ", armor.Skills.Select(s => $"{s.Key}{s.Value:+0;-0}"));
-            text.AppendLine($"  {ArmorParts.Names[part]}: {armor.Name}  [{slots}] レア{armor.Rarity} 防{armor.Defense}→{armor.MaxDefense}  {skills}");
-            if (result.Equivalents[part].Count > 0)
-                text.AppendLine($"        同等品(要求スキル・スロット同じ): {string.Join(", ", result.Equivalents[part].Take(6).Select(a => a.Name))}{(result.Equivalents[part].Count > 6 ? " …" : "")}");
+            Filter = "テキスト ファイル (*.txt)|*.txt",
+            FileName = defaultFileName,
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            // メモ帳などで文字化けしないよう BOM 付き UTF-8 で書く
+            File.WriteAllText(dialog.FileName, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            statusLabel.Text = $"保存しました: {Path.GetFileName(dialog.FileName)}";
         }
-        text.AppendLine($"  お守り: {result.Charm}");
-        text.AppendLine($"  武器スロット: {weaponSlotBox.Value}");
-        text.AppendLine();
-
-        text.AppendLine("■ 装飾品");
-        foreach (var group in result.Decorations.GroupBy(d => d.Location))
-            text.AppendLine($"  {group.Key}: {string.Join(", ", group.Select(d => d.Decoration.Name))}");
-        if (result.Decorations.Count == 0) text.AppendLine("  (なし)");
-        if (result.FreeSlots.Count > 0) text.AppendLine($"  空きスロット: {string.Join(" ", result.FreeSlots)}");
-        text.AppendLine();
-
-        text.AppendLine("■ 発動スキル");
-        foreach (var skill in result.ActiveSkills.OrderBy(s => s.IsNegative))
-            text.AppendLine($"  {(skill.IsNegative ? "▼" : "●")} {skill.Activation.Name}  ({skill.System} {skill.Total})");
-        text.AppendLine();
-
-        text.AppendLine("■ 耐性");
-        var resist = result.Resist;
-        text.AppendLine("  " + string.Join("  ", ResistNames.Select((n, i) => $"{n}{resist[i]:+0;-0;0}")));
-        text.AppendLine();
-
-        text.AppendLine("■ スキルポイント合計");
-        var points = result.SkillTotals.Where(p => p.Value != 0).OrderByDescending(p => p.Value)
-            .Select(p => $"{p.Key}{p.Value:+0;-0}");
-        foreach (var chunk in points.Chunk(6)) text.AppendLine("  " + string.Join("  ", chunk));
-        return text.ToString();
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show(this, $"保存できませんでした。{Environment.NewLine}{exception.Message}", AppTitle,
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     // ───────── 小物 ─────────
@@ -474,8 +445,6 @@ internal sealed class MainForm : Form
         panel.Controls.Add(control);
     }
 
-    private static DataGridViewTextBoxColumn SkillColumn(string name, string header) =>
-        new() { Name = name, HeaderText = header, FillWeight = 100 };
-
-    private static int ParseInt(object? value) => int.TryParse(value?.ToString(), out var number) ? number : 0;
+    private static string FormatVersion(Version? version) =>
+        version == null ? "?" : $"{version.Major}.{version.Minor}.{version.Build}";
 }
