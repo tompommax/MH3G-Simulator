@@ -25,7 +25,7 @@ internal sealed class CharmEditor : UserControl
 
     public CharmEditor(GameData data)
     {
-        limits = CharmLimits.From(data.CharmCategories);
+        limits = CharmLimits.From(data.Charms);
         // 並びはスキル一覧 (skills.json) の順
         firstSkills = data.SkillSystems.Select(s => s.System).Where(limits.FirstSkillMax.ContainsKey).ToList();
         secondSkills = data.SkillSystems.Select(s => s.System).Where(limits.SecondSkillMax.ContainsKey).ToList();

@@ -17,6 +17,27 @@ public sealed class SkillSearcher
         return run.Execute(progress);
     }
 
+    /// <summary>
+    /// お守りだけを入れ替えて何度も「最上位の 1 件」を探すための下準備 (防具の候補づくりを 1 回で済ませる)。
+    /// condition.Charms には試すお守りを全部入れておく (マイナスになり得る系統とスロット上限の見積もりに使う)。
+    /// 返す Probe はスレッドセーフではないので、並列に使う時はスレッドごとに作る。
+    /// </summary>
+    public Probe CreateProbe(SearchCondition condition, CancellationToken cancellation) =>
+        new(new SearchRun(data, condition.WithMaxResults(1), cancellation));
+
+    public sealed class Probe
+    {
+        private readonly SearchRun run;
+
+        internal Probe(SearchRun run) => this.run = run;
+
+        /// <summary>このお守りで要求を満たす構成のうち最上位の 1 件。満たせなければ null。</summary>
+        public SearchResult? FindBest(Charm charm) => run.FindBest(charm);
+
+        /// <summary>これまでに装飾品探索を上限で打ち切った構成の数。</summary>
+        public int TruncatedSolves => run.TruncatedSolves;
+    }
+
     /// <summary>結果の並び順: 最終防御力 → 空きスロット合計 → 初期防御力 (いずれも大きい方が上)。</summary>
     public static int CompareResults(SearchResult a, SearchResult b) =>
         CompareRanks(a.MaxDefense, a.FreeSlotTotal, a.Defense, b.MaxDefense, b.FreeSlotTotal, b.Defense);
@@ -42,7 +63,7 @@ public sealed class SkillSearcher
         public int MaxDefense => Members[0].MaxDefense;
     }
 
-    private sealed class SearchRun
+    internal sealed class SearchRun
     {
         private readonly GameData data;
         private readonly SearchCondition condition;
@@ -97,31 +118,44 @@ public sealed class SkillSearcher
                 .Where(p => p != ArmorParts.Body).OrderBy(p => candidates[p].Count)];
         }
 
+        public int TruncatedSolves => truncatedSolves;
+
         public SearchOutcome Execute(IProgress<double>? progress)
         {
             var charms = condition.Charms.Count == 0 ? [Charm.None] : condition.Charms;
-            var bodyCandidates = candidates[ArmorParts.Body];
-            var totalSteps = Math.Max(1, charms.Count * bodyCandidates.Count);
+            var totalSteps = Math.Max(1, charms.Count * candidates[ArmorParts.Body].Count);
             var step = 0;
 
             foreach (var charm in charms)
-            {
-                currentCharm = charm;
-                charmNegativePoints = negativeSystems.Select(n => CharmPoints(charm, n)).ToArray();
-                foreach (var body in bodyCandidates)
-                {
-                    cancellation.ThrowIfCancellationRequested();
-                    chosen[ArmorParts.Body] = body;
-                    PrepareSuffixBounds(body);
-                    var points = new int[systems.Length];
-                    for (var k = 0; k < systems.Length; k++)
-                        points[k] = body.Points[k] + CharmPoints(charm, systems[k]);
-                    Dfs(1, points, body.Slots, 1, body.MaxDefense);
-                    progress?.Report(++step / (double)totalSteps);
-                }
-            }
+                RunCharm(charm, () => progress?.Report(++step / (double)totalSteps));
             results.Sort((a, b) => CompareResults(b, a));
             return new SearchOutcome(results, truncatedSolves);
+        }
+
+        /// <summary>1 つのお守りだけで探し直し、最上位の 1 件を返す (結果の保持件数は condition.MaxResults)。</summary>
+        public SearchResult? FindBest(Charm charm)
+        {
+            results.Clear();
+            worstResult = null;
+            RunCharm(charm, onBodyDone: null);
+            return results.Count == 0 ? null : results.Max(ResultComparer);
+        }
+
+        private void RunCharm(Charm charm, Action? onBodyDone)
+        {
+            currentCharm = charm;
+            charmNegativePoints = negativeSystems.Select(n => CharmPoints(charm, n)).ToArray();
+            foreach (var body in candidates[ArmorParts.Body])
+            {
+                cancellation.ThrowIfCancellationRequested();
+                chosen[ArmorParts.Body] = body;
+                PrepareSuffixBounds(body);
+                var points = new int[systems.Length];
+                for (var k = 0; k < systems.Length; k++)
+                    points[k] = body.Points[k] + CharmPoints(charm, systems[k]);
+                Dfs(1, points, body.Slots, 1, body.MaxDefense);
+                onBodyDone?.Invoke();
+            }
         }
 
         private List<Armor> BuildPool(int part) =>

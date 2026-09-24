@@ -86,19 +86,41 @@ public sealed class Charm
 }
 
 /// <summary>
-/// お守りの系統 (鑑定前の名前) ごとの出現ルール。鑑定後の護石の種類はこのどれかに属する。
-/// Skills は「付き得るスキル → 最大ポイント」。
+/// お守りの作られ方 (charms.json)。お守りの乱数は x ← Multiplier·x mod Modulus で進み、
+/// 乱数の初期値がテーブルごとに決まっている。お守りの種類 (なぞ / 光る / 古びた / 風化した) ごとに
+/// スキル表・第 2 スキルが付く判定値・スロットの判定表を持つ。
 /// </summary>
-public sealed class CharmCategory
+public sealed class CharmModel
 {
-    public string Name { get; init; } = "";
-    public List<string> Types { get; init; } = [];
-    public int MaxSlots { get; init; }
-    public bool SecondSkill { get; init; }
-    /// <summary>第 2 スキルのマイナス側の下限 (第 2 スキルが無い系統は 0)。</summary>
-    public int SecondSkillMin { get; init; }
-    public Dictionary<string, int> Skills { get; init; } = [];
+    public required int Multiplier { get; init; }
+    public required int Modulus { get; init; }
+    public required IReadOnlyList<CharmTableSeed> Tables { get; init; }
+    public required IReadOnlyList<CharmKind> Kinds { get; init; }
 }
+
+/// <summary>テーブル番号と、その乱数の初期値。</summary>
+public sealed record CharmTableSeed(int Table, int Seed);
+
+public sealed class CharmKind
+{
+    /// <summary>拾った時のお守りの名前 (なぞのお守り 等)。</summary>
+    public required string Name { get; init; }
+    /// <summary>乱数 % 100 がこの値以上なら第 2 スキルが付く (100 なら付かない)。</summary>
+    public required int SecondSkillThreshold { get; init; }
+    /// <summary>護石の名前: 評価値 (スロット値 + 2 × スロット数) が MaxScore 以下の最初のもの。最後は MaxScore なし。</summary>
+    public required IReadOnlyList<CharmNameBand> Names { get; init; }
+    /// <summary>スロット値 1, 2, … ごとの [1 スロット, 2 スロット, 3 スロット] になる乱数 % 100 の下限。最後の行はそれより大きいスロット値にも使う。</summary>
+    public required IReadOnlyList<int[]> SlotRows { get; init; }
+    /// <summary>第 1 スキルの表。並び順 = 乱数で選ぶ番号。</summary>
+    public required IReadOnlyList<CharmSkillRange> FirstSkills { get; init; }
+    /// <summary>第 2 スキルの表。並び順 = 乱数で選ぶ番号。</summary>
+    public required IReadOnlyList<CharmSkillRange> SecondSkills { get; init; }
+}
+
+public sealed record CharmNameBand(string Name, int? MaxScore);
+
+/// <summary>スキル表の 1 行: スキルとポイントの範囲 (第 2 スキルは Min がマイナス)。</summary>
+public sealed record CharmSkillRange(string Skill, int Min, int Max);
 
 public sealed record SkillRequirement(string System, int Points, string ActivationName);
 
@@ -113,6 +135,25 @@ public sealed class SearchCondition
     public bool AvoidNegativeSkills { get; init; } = true;
     public HashSet<int> ExcludedArmorIds { get; init; } = [];
     public int MaxResults { get; init; } = 200;
+
+    /// <summary>お守りの候補だけを差し替えた複製。</summary>
+    public SearchCondition WithCharms(List<Charm> charms) => Copy(charms, MaxResults);
+
+    /// <summary>結果の保持件数だけを差し替えた複製。</summary>
+    public SearchCondition WithMaxResults(int maxResults) => Copy(Charms, maxResults);
+
+    private SearchCondition Copy(List<Charm> charms, int maxResults) => new()
+    {
+        Requirements = Requirements,
+        IsGunner = IsGunner,
+        IsFemale = IsFemale,
+        MaxRarity = MaxRarity,
+        WeaponSlots = WeaponSlots,
+        Charms = charms,
+        AvoidNegativeSkills = AvoidNegativeSkills,
+        ExcludedArmorIds = ExcludedArmorIds,
+        MaxResults = maxResults,
+    };
 }
 
 public sealed record PlacedDecoration(Decoration Decoration, string Location);

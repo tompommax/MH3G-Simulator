@@ -9,6 +9,8 @@ public static class DataValidator
     private const int MaxSlots = 3;
     private const int MaxRarity = 10;
     private const int MaxCharmPoints = 20;
+    /// <summary>テーブル数の上限 (出るテーブルを int のビットで持つため)。</summary>
+    private const int MaxCharmTables = 31;
 
     public static List<string> Validate(GameData data)
     {
@@ -67,20 +69,63 @@ public static class DataValidator
 
     private static void ValidateCharms(GameData data, HashSet<string> systems, List<string> problems)
     {
-        foreach (var group in data.CharmCategories.SelectMany(c => c.Types).GroupBy(t => t).Where(g => g.Count() > 1))
-            problems.Add($"{GameData.CharmFile}: 種類「{group.Key}」が複数の系統にある");
-        foreach (var category in data.CharmCategories)
+        var model = data.Charms;
+        var file = GameData.CharmFile;
+        // 乗数と法が互いに素でないと、乱数が初期値に戻らずテーブルが輪にならない
+        if (model.Multiplier < 2 || model.Modulus < 2 || Gcd(model.Multiplier, model.Modulus) != 1)
+            problems.Add($"{file}: rng の multiplier {model.Multiplier} と modulus {model.Modulus} は互いに素な 2 以上の整数");
+
+        var numbers = model.Tables.Select(t => t.Table).Order().ToList();
+        if (!numbers.SequenceEqual(Enumerable.Range(1, numbers.Count)))
+            problems.Add($"{file}: tables の table は 1 から抜けなく重複なく ({string.Join(" ", numbers)})");
+        if (numbers.Count is 0 or > MaxCharmTables) problems.Add($"{file}: tables は 1〜{MaxCharmTables} 個");
+        foreach (var table in model.Tables.Where(t => t.Seed < 1 || t.Seed >= model.Modulus))
+            problems.Add($"{file}: テーブル {table.Table} の seed {table.Seed} (1〜{model.Modulus - 1})");
+        foreach (var group in model.Tables.GroupBy(t => t.Seed).Where(g => g.Count() > 1))
+            problems.Add($"{file}: seed {group.Key} が複数のテーブルにある");
+
+        foreach (var group in model.Kinds.GroupBy(k => k.Name).Where(g => g.Count() > 1))
+            problems.Add($"{file}: kinds の「{group.Key}」が重複");
+        foreach (var kind in model.Kinds) ValidateCharmKind(kind, systems, problems);
+    }
+
+    private static void ValidateCharmKind(CharmKind kind, HashSet<string> systems, List<string> problems)
+    {
+        var label = $"{GameData.CharmFile}: {kind.Name}";
+        if (kind.SecondSkillThreshold is < 0 or > 100) problems.Add($"{label}: secondSkillThreshold {kind.SecondSkillThreshold} (0〜100)");
+        if (kind.FirstSkills.Count == 0) problems.Add($"{label}: skill1 の表が空");
+        if (kind.SecondSkillThreshold < 100 && kind.SecondSkills.Count == 0) problems.Add($"{label}: 第 2 スキルが付く判定値なのに skill2 の表が空");
+
+        if (kind.Names.Count == 0 || kind.Names[^1].MaxScore != null)
+            problems.Add($"{label}: names の最後は maxScore なし (それ以上すべて)");
+        var limits = kind.Names.Where(n => n.MaxScore != null).Select(n => n.MaxScore!.Value).ToList();
+        if (limits.Zip(limits.Skip(1)).Any(p => p.First >= p.Second) || kind.Names.SkipLast(1).Any(n => n.MaxScore == null))
+            problems.Add($"{label}: names の maxScore は小さい順に、最後以外すべて書く");
+
+        if (kind.SlotRows.Count == 0) problems.Add($"{label}: slotRows が空");
+        for (var i = 0; i < kind.SlotRows.Count; i++)
         {
-            var label = $"{GameData.CharmFile}: {category.Name}";
-            if (category.Types.Count == 0) problems.Add($"{label}: types が空");
-            if (category.MaxSlots is < 0 or > MaxSlots) problems.Add($"{label}: maxSlots {category.MaxSlots} (0〜{MaxSlots})");
-            if (category.SecondSkill ? category.SecondSkillMin >= 0 : category.SecondSkillMin != 0)
-                problems.Add($"{label}: secondSkillMin {category.SecondSkillMin} (第 2 スキルありなら負、なしなら 0)");
-            foreach (var (skill, maximum) in category.Skills)
+            var row = kind.SlotRows[i];
+            if (row.Length != 3 || row[0] < 0 || row[0] > row[1] || row[1] > row[2] || row[2] > 100)
+                problems.Add($"{label}: slotRows の {i + 1} 行目 [{string.Join(", ", row)}] は 0 ≤ 1 スロット ≤ 2 スロット ≤ 3 スロット ≤ 100 の 3 つ");
+        }
+
+        foreach (var (list, ranges) in new[] { ("skill1", kind.FirstSkills), ("skill2", kind.SecondSkills) })
+        {
+            foreach (var group in ranges.GroupBy(r => r.Skill).Where(g => g.Count() > 1))
+                problems.Add($"{label}: {list} に「{group.Key}」が重複");
+            foreach (var range in ranges)
             {
-                if (!systems.Contains(skill)) problems.Add($"{label}: スキル「{skill}」が {GameData.SkillFile} に無い");
-                if (maximum is < 1 or > MaxCharmPoints) problems.Add($"{label}: {skill} の最大ポイント {maximum} (1〜{MaxCharmPoints})");
+                var where = $"{label} の {list} {range.Skill}";
+                if (!systems.Contains(range.Skill)) problems.Add($"{where}: {GameData.SkillFile} に無いスキル");
+                if (range.Max is < 1 or > MaxCharmPoints) problems.Add($"{where}: max {range.Max} (1〜{MaxCharmPoints})");
+                if (list == "skill1" && (range.Min < 1 || range.Min > range.Max || range.Min * 10 < range.Max))
+                    problems.Add($"{where}: min {range.Min} は 1 以上・max 以下で、min × 10 ≥ max (スロット値が 1 以上になる)");
+                if (list == "skill2" && range.Min is > 0 or < -MaxCharmPoints)
+                    problems.Add($"{where}: min {range.Min} (-{MaxCharmPoints}〜0)");
             }
         }
     }
+
+    private static int Gcd(int a, int b) => b == 0 ? Math.Abs(a) : Gcd(b, a % b);
 }

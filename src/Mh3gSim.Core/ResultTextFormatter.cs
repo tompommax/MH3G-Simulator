@@ -53,8 +53,12 @@ public static class ResultTextFormatter
         return text.ToString();
     }
 
-    /// <summary>ファイル保存用: 検索条件の見出し + 結果を順番に並べる。</summary>
-    public static string FormatExport(SearchCondition condition, IReadOnlyList<SearchResult> results, string title)
+    /// <summary>
+    /// ファイル保存用: 検索条件の見出し + 結果を順番に並べる。
+    /// charmSearch があればお守りの自動計算の結果として出す (suggestions は results と同じ並び)。
+    /// </summary>
+    public static string FormatExport(SearchCondition condition, IReadOnlyList<SearchResult> results, string title,
+        CharmSearchContext? charmSearch = null)
     {
         var text = new StringBuilder();
         text.AppendLine(title);
@@ -63,16 +67,80 @@ public static class ResultTextFormatter
         text.AppendLine("  スキル: " + string.Join("、", condition.Requirements.Select(r => $"{r.ActivationName}({r.System} {r.Points})")));
         text.AppendLine($"  職業: {(condition.IsGunner ? "ガンナー" : "剣士")} / 性別: {(condition.IsFemale ? "女" : "男")} / レア度上限: {condition.MaxRarity} / 武器スロット: {condition.WeaponSlots}");
         text.AppendLine($"  マイナススキル: {(condition.AvoidNegativeSkills ? "発動させない" : "発動を許す")}");
-        text.AppendLine($"  お守り: {string.Join(" / ", condition.Charms)}");
+        text.AppendLine(charmSearch == null
+            ? $"  お守り: {string.Join(" / ", condition.Charms)}"
+            : $"  お守り: 自動計算 (成立に必要なお守りを探す、{(charmSearch.Table is { } table ? $"テーブル {table} で出るお守り" : "全テーブルのお守り")})");
         text.AppendLine($"  結果: {results.Count} 件");
 
         for (var i = 0; i < results.Count; i++)
         {
             text.AppendLine();
             text.AppendLine($"========== No.{i + 1} ==========");
-            text.Append(FormatResult(results[i], condition.WeaponSlots));
+            text.Append(charmSearch == null
+                ? FormatResult(results[i], condition.WeaponSlots)
+                : FormatSuggestion(charmSearch.Suggestions[i], condition.Requirements, condition.WeaponSlots, charmSearch.AllTables));
         }
         return text.ToString();
+    }
+
+    // ───────── お守りの自動計算 ─────────
+
+    /// <summary>自動計算の結果を文字にするのに要る情報 (結果ごとの必要なお守り・絞ったテーブル・テーブル番号の一覧)。</summary>
+    public sealed record CharmSearchContext(IReadOnlyList<CharmSuggestion> Suggestions, int? Table, IReadOnlyList<int> AllTables);
+
+    /// <summary>自動計算の 1 件: 必要なお守りの説明 + 条件を満たす実在のお守り + そのお守りで組める構成。</summary>
+    public static string FormatSuggestion(CharmSuggestion suggestion, IReadOnlyList<SkillRequirement> requirements, int weaponSlots,
+        IReadOnlyList<int> allTables)
+    {
+        var requirement = suggestion.Requirement;
+        var text = new StringBuilder();
+        text.AppendLine($"■ 必要なお守り: {DescribeRequirement(requirement, requirements)}");
+        if (!requirement.IsZero && suggestion.Availability is { } availability)
+        {
+            text.AppendLine($"  出るお守り: {string.Join("・", availability.Kinds)}");
+            text.AppendLine($"  出るテーブル: {FormatTables(availability.Tables, allTables)} (条件を満たすお守り {availability.Count} 種類)");
+            foreach (var example in availability.Examples)
+                text.AppendLine($"  例: {example}  (テーブル {FormatTables(allTables.Where(example.AppearsOn).ToList(), allTables)})");
+            text.AppendLine("  (欲しいスキル以外のスキルは問わない。マイナスのスキルが付いたお守りは、入力して通常の検索で確かめてください)");
+        }
+        text.AppendLine();
+        text.Append(FormatResult(suggestion.Best, weaponSlots));
+        return text.ToString();
+    }
+
+    /// <summary>「攻撃+6 以上・スロット 1 以上」のような必要条件の説明。</summary>
+    public static string DescribeRequirement(CharmRequirement requirement, IReadOnlyList<SkillRequirement> requirements)
+    {
+        if (requirement.IsZero) return "不要 (お守りなしで成立)";
+        var parts = requirement.Points.Select((p, i) => (requirements[i].System, Points: p)).Where(s => s.Points > 0)
+            .Select(s => $"{s.System}{s.Points:+0} 以上").ToList();
+        if (requirement.Slots > 0) parts.Add($"スロット {requirement.Slots} 以上");
+        var text = string.Join("・", parts);
+        return requirement.Points.All(p => p == 0) ? $"{text} (スキルは問わない)" : text;
+    }
+
+    /// <summary>テーブル番号の並びを「1〜10, 13, 14」のように縮める (全部なら「全テーブル」)。</summary>
+    public static string FormatTables(IReadOnlyList<int> tables, IReadOnlyList<int> allTables)
+    {
+        if (tables.Count == 0) return "なし";
+        if (tables.Count == allTables.Count) return "全テーブル";
+        var parts = new List<string>();
+        for (var i = 0; i < tables.Count; i++)
+        {
+            var start = tables[i];
+            while (i + 1 < tables.Count && tables[i + 1] == tables[i] + 1) i++;
+            parts.Add(tables[i] - start >= 2 ? $"{start}〜{tables[i]}" : tables[i] == start ? $"{start}" : $"{start}, {tables[i]}");
+        }
+        return string.Join(", ", parts);
+    }
+
+    /// <summary>一覧表示用の短い形 (「攻撃+6 [○－－]」「スキル問わず [○○○]」「不要」)。</summary>
+    public static string ShortRequirement(CharmRequirement requirement, IReadOnlyList<SkillRequirement> requirements)
+    {
+        if (requirement.IsZero) return "不要";
+        var skills = requirement.Points.Select((p, i) => (requirements[i].System, Points: p)).Where(s => s.Points > 0)
+            .Select(s => $"{s.System}{s.Points:+0}").ToList();
+        return $"{(skills.Count == 0 ? "スキル問わず" : string.Join(" ", skills))} [{SlotMarks(requirement.Slots)}]";
     }
 
     private static string SlotMarks(int slots) => new string('○', slots) + new string('－', 3 - slots);

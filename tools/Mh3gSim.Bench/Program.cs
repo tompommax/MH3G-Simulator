@@ -10,7 +10,7 @@ catch (DataLoadException exception)
     Console.WriteLine("check-data: NG (読み込み失敗)\n  " + exception.Message);
     return 1;
 }
-var requirements = args.Where(a => a.Contains(':') && !a.StartsWith("charm=")).Select(a =>
+var requirements = args.Where(a => a.Contains(':') && !a.StartsWith("charm=") && !File.Exists(a)).Select(a =>
 {
     var pieces = a.Split(':');
     return new SkillRequirement(pieces[0], int.Parse(pieces[1]), pieces[0]);
@@ -57,11 +57,48 @@ if (args.Contains("--check-data"))
 {
     // データファイル (src/Mh3gSim.Core/Data/*.json) を手で直した後の整合チェック。NG なら終了コード 1
     var problems = DataValidator.Validate(data);
-    Console.WriteLine($"防具 {data.Armors.Count} / 装飾品 {data.Decorations.Count} / スキル系統 {data.SkillSystems.Count} / お守り系統 {data.CharmCategories.Count}");
-    foreach (var category in data.CharmCategories)
-        Console.WriteLine($"  {category.Name}: {string.Join("/", category.Types)} / スキル {category.Skills.Count} / スロット 0-{category.MaxSlots}");
+    var charmModel = data.Charms;
+    Console.WriteLine($"防具 {data.Armors.Count} / 装飾品 {data.Decorations.Count} / スキル系統 {data.SkillSystems.Count} / お守りの種類 {charmModel.Kinds.Count} / テーブル {charmModel.Tables.Count}");
+    foreach (var kind in charmModel.Kinds)
+        Console.WriteLine($"  {kind.Name}: 第 1 スキル {kind.FirstSkills.Count} / 第 2 スキル {kind.SecondSkills.Count} / スロット 0-{CharmLimits.MaxSlotsOf(kind)} / {string.Join("・", kind.Names.Select(n => n.Name))}");
+    // 値の範囲が正しければ、実際に全テーブルのお守りを作れることも確かめる
+    if (problems.Count == 0) Console.WriteLine($"  実在するお守り {CharmGenerator.GenerateAll(charmModel).Count} 種類");
     Console.WriteLine(problems.Count == 0 ? "check-data: OK" : "check-data: NG\n  " + string.Join("\n  ", problems));
     return problems.Count == 0 ? 0 : 1;
+}
+if (args.Contains("--charm-model-test"))
+{
+    // お守りの作り方の回帰テスト: 全テーブルで作ったお守りの数 (合計・テーブルごと) と、決まった位置のお守りを固定値と比べる。
+    // 続けて CSV (種類,スキル1,ポイント1,スキル2,ポイント2,スロット,テーブル[空白区切り]) を渡すと、全件を 1 件ずつ突き合わせる
+    var modelWatch = Stopwatch.StartNew();
+    var entries = CharmGenerator.GenerateAll(data.Charms);
+    var perTable = data.Charms.Tables.Select(t => entries.Count(e => e.AppearsOn(t.Table))).ToArray();
+    Console.WriteLine($"実在するお守り {entries.Count} 種類 ({modelWatch.ElapsedMilliseconds} ms)");
+    Console.WriteLine("  テーブルごと: " + string.Join(" ", perTable.Select((count, i) => $"T{i + 1}:{count}")));
+    int[] expectedPerTable = [12911, 12891, 12745, 12987, 12843, 13049, 12843, 12957, 12851, 12762, 768, 212, 12956, 12936, 778, 211, 213];
+    var first = CharmGenerator.Generate(data.Charms, data.Charms.Kinds[0], data.Charms.Tables[0].Seed);
+    var modelFailures = new List<string>();
+    if (entries.Count != 121952) modelFailures.Add($"合計 {entries.Count} (期待 121952)");
+    if (!perTable.SequenceEqual(expectedPerTable)) modelFailures.Add("テーブルごとの数が期待値と違う");
+    if ($"{first.Name} {first.ToCharm()}" != "闘士の護石 采配+2 [○－－]") modelFailures.Add($"T1 なぞの 1 番目が {first.Name} {first.ToCharm()} (期待 闘士の護石 采配+2 [○－－])");
+
+    var csvArgument = Array.IndexOf(args, "--charm-model-test") + 1;
+    if (csvArgument < args.Length && File.Exists(args[csvArgument]))
+    {
+        string Line(string kind, string s1, int p1, string s2, int p2, int slots, IEnumerable<int> tables) =>
+            $"{kind},{s1},{p1},{s2},{(s2.Length == 0 ? "" : p2)},{slots},{string.Join(" ", tables)}";
+        var generated = entries.Select(e => Line(e.Kind, e.Skill1, e.Points1, e.Skill2, e.Points2, e.Slots,
+            data.Charms.Tables.Select(t => t.Table).Where(e.AppearsOn))).ToHashSet();
+        var reference = File.ReadLines(args[csvArgument]).Skip(1).Select(l => l.TrimStart('﻿')).ToHashSet();
+        var onlyGenerated = generated.Except(reference).ToList();
+        var onlyReference = reference.Except(generated).ToList();
+        Console.WriteLine($"  CSV 突き合わせ: 参照 {reference.Count} 行 / 作ったものだけ {onlyGenerated.Count} / 参照だけ {onlyReference.Count}");
+        foreach (var line in onlyGenerated.Take(5)) Console.WriteLine($"    作ったものだけ: {line}");
+        foreach (var line in onlyReference.Take(5)) Console.WriteLine($"    参照だけ: {line}");
+        if (onlyGenerated.Count + onlyReference.Count > 0) modelFailures.Add("CSV と一致しない");
+    }
+    Console.WriteLine(modelFailures.Count == 0 ? "charm-model-test: OK" : "charm-model-test: NG\n  " + string.Join("\n  ", modelFailures));
+    return modelFailures.Count == 0 ? 0 : 1;
 }
 if (args.Contains("--scan"))
 {
@@ -128,6 +165,82 @@ if (args.Contains("--scan"))
     Console.WriteLine($"scan done: negative-affected cases {negativeCases}, mismatches {mismatches}");
     return 0;
 }
+if (args.Contains("--find-charm"))
+{
+    // お守りの自動計算 (--table N でそのテーブルのお守りだけ)。--verify を付けると、候補のお守りを全部 1 つずつ検索した結果 (総当たり) と最小限のお守りの集合を突き合わせる
+    int? table = Option("--table", 0) is var number and > 0 ? number : null;
+    var catalog = new CharmCatalog(data.Charms);
+    var catalogWatch = Stopwatch.StartNew();
+    var candidates = catalog.RequirementsFor(requirements, table);
+    var catalogMs = catalogWatch.ElapsedMilliseconds;
+    if (args.Contains("--cancel-test"))
+    {
+        // 途中で中止した時に OperationCanceledException になること (AggregateException で包まれてエラー表示にならないこと)
+        var cancelResults = new List<string>();
+        foreach (var delay in new[] { 0, 5, 20, 60 })
+        {
+            using var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(delay));
+            try
+            {
+                new CharmFinder(new SkillSearcher(data)).Find(condition, candidates, null, source.Token);
+                cancelResults.Add($"{delay}ms: 完了");
+            }
+            catch (OperationCanceledException) { cancelResults.Add($"{delay}ms: 中止"); }
+            catch (Exception exception) { cancelResults.Add($"{delay}ms: NG {exception.GetType().Name}"); }
+        }
+        Console.WriteLine("cancel-test: " + string.Join(" / ", cancelResults));
+        return cancelResults.Any(r => r.Contains("NG")) ? 1 : 0;
+    }
+    var finderWatch = Stopwatch.StartNew();
+    // --direct: 打ち切りが起きた時の道 (推論せず候補を全部検索) を通して、結果が同じになるかを確かめる
+    var found = new CharmFinder(new SkillSearcher(data)) { ForceDirectProbing = args.Contains("--direct") }
+        .Find(condition, candidates, null, CancellationToken.None);
+    Console.WriteLine($"候補 {candidates.Count} ({catalogMs} ms) / 必要なお守り {found.Suggestions.Count} 通り / {finderWatch.ElapsedMilliseconds} ms / 珠探索の打ち切り {found.TruncatedSolves}");
+    foreach (var s in found.Suggestions.Take(Option("--show", 20)))
+    {
+        var availability = catalog.Describe(s.Requirement, requirements, table, 1);
+        Console.WriteLine($"  {ResultTextFormatter.ShortRequirement(s.Requirement, requirements)}  ({string.Join("・", availability.Kinds)} / テーブル {ResultTextFormatter.FormatTables(availability.Tables, catalog.TableNumbers)} / {availability.Count} 種類"
+            + $"{(availability.Examples.Count > 0 ? $" / 例 {availability.Examples[0]}" : "")})  防御 {s.Best.Defense}->{s.Best.MaxDefense}: {string.Join(" / ", s.Best.Armors.Select(a => a.Name))}");
+    }
+    if (args.Contains("--export"))
+    {
+        // テキスト保存と同じ書式 (見出し + 結果ごとの必要なお守り) を先頭だけ表示する
+        var suggestionsForExport = found.Suggestions.Select(s => s with { Availability = catalog.Describe(s.Requirement, requirements, table, 3) }).ToList();
+        var exportText = ResultTextFormatter.FormatExport(condition, [.. suggestionsForExport.Select(s => s.Best)], "export-test",
+            new ResultTextFormatter.CharmSearchContext(suggestionsForExport, table, catalog.TableNumbers));
+        Console.WriteLine(string.Join("\n", exportText.Split('\n').Take(Option("--export-lines", 24))));
+    }
+    if (!args.Contains("--verify")) return 0;
+
+    var bruteWatch = Stopwatch.StartNew();
+    var feasible = new System.Collections.Concurrent.ConcurrentBag<CharmRequirement>();
+    var searcherForBrute = new SkillSearcher(data);
+    var probeCondition = condition.WithCharms([.. candidates.Select(c => c.ToCharm(requirements))]);
+    Parallel.ForEach(candidates, () => searcherForBrute.CreateProbe(probeCondition, CancellationToken.None),
+        (candidate, _, probe) => { if (probe.FindBest(candidate.ToCharm(requirements)) != null) feasible.Add(candidate); return probe; },
+        _ => { });
+    var feasibleList = feasible.ToList();
+    var trueMinimal = feasibleList.Where(c => !feasibleList.Any(o => o != c && c.IsAtLeast(o.Points, o.Slots) && !o.IsAtLeast(c.Points, c.Slots))).ToList();
+    string Key(CharmRequirement c) => $"{string.Join(",", c.Points)}|{c.Slots}";
+    var expected = trueMinimal.Select(Key).ToHashSet();
+    var actual = found.Suggestions.Select(s => Key(s.Requirement)).ToHashSet();
+    Console.WriteLine($"総当たり: 成立 {feasibleList.Count} / 最小 {trueMinimal.Count} ({bruteWatch.ElapsedMilliseconds} ms)");
+    Console.WriteLine(expected.SetEquals(actual)
+        ? "verify: OK (自動計算の結果と総当たりの最小集合が一致)"
+        : $"verify: NG  総当たりだけ: {string.Join(" ", expected.Except(actual))}  自動計算だけ: {string.Join(" ", actual.Except(expected))}");
+
+    // 出したお守りの条件は、どれも実在するお守り (テーブル指定ならそのテーブル) の中にちょうど同じものがあること
+    var realKeys = catalog.Entries.Where(e => table is not { } only || e.AppearsOn(only))
+        .Select(e => requirements.Select(r => (e.Skill1 == r.System ? e.Points1 : 0) + (e.Skill2 == r.System ? e.Points2 : 0)).ToArray())
+        .Zip(catalog.Entries.Where(e => table is not { } only || e.AppearsOn(only)), (points, e) => $"{string.Join(",", points)}|{e.Slots}")
+        .ToHashSet();
+    var unreal = found.Suggestions.Where(s => !realKeys.Contains(Key(s.Requirement))).ToList();
+    Console.WriteLine(unreal.Count == 0
+        ? "verify: OK (出したお守りの条件はすべて実在するお守りでちょうど作れる)"
+        : $"verify: NG 実在しない条件 {string.Join(" ", unreal.Select(s => Key(s.Requirement)))}");
+    return expected.SetEquals(actual) && unreal.Count == 0 ? 0 : 1;
+}
+
 var watch = Stopwatch.StartNew();
 var outcome = new SkillSearcher(data).Search(condition, null, CancellationToken.None);
 var results = outcome.Results;

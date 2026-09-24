@@ -25,7 +25,7 @@ public sealed class GameData
     public required IReadOnlyList<Armor> Armors { get; init; }
     public required IReadOnlyList<Decoration> Decorations { get; init; }
     public required IReadOnlyList<SkillSystem> SkillSystems { get; init; }
-    public required IReadOnlyList<CharmCategory> CharmCategories { get; init; }
+    public required CharmModel Charms { get; init; }
 
     public static GameData LoadEmbedded()
     {
@@ -34,7 +34,7 @@ public sealed class GameData
             Armors = Load<List<ArmorRecord>>(ArmorFile).Select(r => r.ToArmor()).ToList(),
             Decorations = Load<List<Decoration>>(DecorationFile),
             SkillSystems = Load<List<SkillSystem>>(SkillFile),
-            CharmCategories = Load<CharmTable>(CharmFile).ToCategories(),
+            Charms = Load<CharmRecord>(CharmFile).ToModel(),
         };
     }
 
@@ -122,30 +122,81 @@ public sealed class GameData
 
     // ───────── charms.json ─────────
 
-    private sealed class CharmTable
-    {
-        public List<CharmCategory> Categories { get; init; } = [];
-        /// <summary>1 行 = 1 スキル: {"skill": 系統名, "系統名": 最大ポイント, ...}。書いていない系統には付かない。</summary>
-        public List<Dictionary<string, JsonElement>> MaxPoints { get; init; } = [];
+    private const string FirstSkillList = "skill1";
+    private const string SecondSkillList = "skill2";
 
-        public List<CharmCategory> ToCategories()
+    private sealed class CharmRecord
+    {
+        public RngRecord Rng { get; init; } = new();
+        public List<CharmTableSeed> Tables { get; init; } = [];
+        public List<KindRecord> Kinds { get; init; } = [];
+        /// <summary>1 行 = スキル表の 1 行: {"kind", "list": skill1 / skill2, "index": 表の中の番号 (0 から), "skill", "min", "max"}。</summary>
+        public List<SkillRecord> Skills { get; init; } = [];
+
+        public CharmModel ToModel()
         {
-            var byName = Categories.ToDictionary(c => c.Name);
-            foreach (var row in MaxPoints)
+            var unknownKinds = Skills.Select(s => s.Kind).Distinct().Except(Kinds.Select(k => k.Kind)).ToList();
+            if (unknownKinds.Count > 0) throw new DataLoadException($"{CharmFile}: skills の kind が kinds にありません ({string.Join(" ", unknownKinds)})");
+            var badLists = Skills.Where(s => s.List is not (FirstSkillList or SecondSkillList)).Select(s => $"{s.Kind} {s.Skill}").ToList();
+            if (badLists.Count > 0) throw new DataLoadException($"{CharmFile}: skills の list は skill1 か skill2 ({string.Join(", ", badLists)})");
+
+            return new CharmModel
             {
-                if (!row.TryGetValue("skill", out var skillElement) || skillElement.ValueKind != JsonValueKind.String)
-                    throw new DataLoadException($"{CharmFile}: maxPoints の行に \"skill\" がありません");
-                var skill = skillElement.GetString()!;
-                foreach (var (column, value) in row.Where(kv => kv.Key != "skill"))
+                Multiplier = Rng.Multiplier,
+                Modulus = Rng.Modulus,
+                Tables = Tables,
+                Kinds = Kinds.Select(k => new CharmKind
                 {
-                    if (!byName.TryGetValue(column, out var category))
-                        throw new DataLoadException($"{CharmFile}: {skill} の行の \"{column}\" は categories にありません");
-                    if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var maximum))
-                        throw new DataLoadException($"{CharmFile}: {skill} の行の \"{column}\" は整数で書いてください");
-                    category.Skills[skill] = maximum;
-                }
-            }
-            return Categories;
+                    Name = k.Kind,
+                    SecondSkillThreshold = k.SecondSkillThreshold,
+                    Names = k.Names.Select(n => new CharmNameBand(n.Name, n.MaxScore)).ToList(),
+                    SlotRows = k.SlotRows,
+                    FirstSkills = OrderedList(k.Kind, FirstSkillList),
+                    SecondSkills = OrderedList(k.Kind, SecondSkillList),
+                }).ToList(),
+            };
         }
+
+        /// <summary>1 つのスキル表を index 順に並べる (乱数で選ぶ番号なので 0 から抜けなく続いていること)。</summary>
+        private List<CharmSkillRange> OrderedList(string kind, string list)
+        {
+            var rows = Skills.Where(s => s.Kind == kind && s.List == list).OrderBy(s => s.Index).ToList();
+            for (var i = 0; i < rows.Count; i++)
+            {
+                if (rows[i].Index != i)
+                    throw new DataLoadException($"{CharmFile}: {kind} の {list} の index が 0 から連番になっていません ({i} の所が {rows[i].Index} / {rows[i].Skill})");
+            }
+            return rows.Select(s => new CharmSkillRange(s.Skill, s.Min, s.Max)).ToList();
+        }
+    }
+
+    private sealed class RngRecord
+    {
+        public int Multiplier { get; init; }
+        public int Modulus { get; init; }
+    }
+
+    private sealed class KindRecord
+    {
+        public string Kind { get; init; } = "";
+        public int SecondSkillThreshold { get; init; }
+        public List<NameRecord> Names { get; init; } = [];
+        public List<int[]> SlotRows { get; init; } = [];
+    }
+
+    private sealed class NameRecord
+    {
+        public string Name { get; init; } = "";
+        public int? MaxScore { get; init; }
+    }
+
+    private sealed class SkillRecord
+    {
+        public string Kind { get; init; } = "";
+        public string List { get; init; } = "";
+        public int Index { get; init; }
+        public string Skill { get; init; } = "";
+        public int Min { get; init; }
+        public int Max { get; init; }
     }
 }

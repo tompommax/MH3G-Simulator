@@ -12,8 +12,17 @@ internal sealed class MainForm : Form
 
     private readonly GameData data = GameData.LoadEmbedded();
     private readonly SkillSearcher searcher;
+    private readonly CharmCatalog charmCatalog;
+    /// <summary>実在するお守りの一覧づくり (起動直後に裏で始める)。</summary>
+    private readonly Task catalogReady;
+    private readonly CharmFinder charmFinder;
+    /// <summary>検索のたびに増やす番号 (終わった検索から遅れて届く進捗を無視するため)。</summary>
+    private int searchGeneration;
+    private bool isSearching;
     private readonly HashSet<int> excludedArmorIds = [];
     private List<SearchResult> results = [];
+    /// <summary>表示中の結果がお守りの自動計算なら、結果ごとの必要なお守り (results と同じ並び)。通常の検索なら null。</summary>
+    private List<CharmSuggestion>? suggestions;
     /// <summary>表示中の結果を出した検索条件 (詳細表示・保存は画面の今の入力ではなくこれを使う)。</summary>
     private SearchCondition? lastCondition;
     private CancellationTokenSource? searchCancellation;
@@ -33,6 +42,15 @@ internal sealed class MainForm : Form
 
     // お守り
     private readonly CharmEditor charmEditor;
+    private readonly RadioButton charmInputRadio = new() { Text = "入力したお守りで検索", Checked = true, AutoSize = true };
+    private readonly RadioButton charmAutoRadio = new() { Text = "自動計算 (成立するお守りを探す)", AutoSize = true };
+    /// <summary>自動計算で候補にするお守りのテーブル (先頭は「すべて」)。</summary>
+    private readonly ComboBox charmTableBox = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 70, Enabled = false };
+    /// <summary>入力中のお守りが出るテーブル (自分のテーブルを調べる手がかり)。</summary>
+    private readonly Label charmTablesLabel = new() { AutoSize = true, MaximumSize = new Size(420, 0), Padding = new Padding(3, 2, 0, 2) };
+    /// <summary>表示中の自動計算の結果を出した時のテーブル (null = すべて)。</summary>
+    private int? lastCharmTable;
+    private const int CharmExampleCount = 3;
 
     // 実行・結果
     private readonly Button searchButton = new() { Text = "検索", Width = 110, Height = 32 };
@@ -51,7 +69,13 @@ internal sealed class MainForm : Form
     public MainForm()
     {
         searcher = new SkillSearcher(data);
+        charmCatalog = new CharmCatalog(data.Charms);
+        catalogReady = Task.Run(() => charmCatalog.Entries.Count);
+        charmFinder = new CharmFinder(searcher);
         charmEditor = new CharmEditor(data) { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
+        charmTableBox.Items.Add("すべて");
+        charmTableBox.Items.AddRange([.. charmCatalog.TableNumbers.Select(t => (object)t.ToString())]);
+        charmTableBox.SelectedIndex = 0;
         Text = $"{AppTitle} v{AppVersion}";
         Font = new Font("Yu Gothic UI", 9.5f);
         ClientSize = new Size(1360, 820);
@@ -144,8 +168,28 @@ internal sealed class MainForm : Form
             Text = "お守り (スキル1 を「（なし）」でお守りなし・自動保存)",
             Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
         };
-        group.Controls.Add(charmEditor);
-        charmEditor.CharmChanged += (_, _) => SaveCharm();
+        var modes = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+        modes.Controls.AddRange([charmInputRadio, charmAutoRadio]);
+        var tableRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+        var tableCaption = new Label { Text = "自動計算で使うテーブル", AutoSize = true, Padding = new Padding(3, 5, 0, 0) };
+        tableRow.Controls.AddRange([tableCaption, charmTableBox]);
+        var stack = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1 };
+        stack.Controls.Add(modes);
+        stack.Controls.Add(tableRow);
+        stack.Controls.Add(charmEditor);
+        stack.Controls.Add(charmTablesLabel);
+        group.Controls.Add(stack);
+        charmEditor.CharmChanged += (_, _) =>
+        {
+            SaveCharm();
+            UpdateCharmTablesLabel();
+        };
+        // 自動計算の時は入力欄を使わず、テーブルの絞り込みを使う
+        charmAutoRadio.CheckedChanged += (_, _) =>
+        {
+            charmEditor.Enabled = !charmAutoRadio.Checked;
+            charmTableBox.Enabled = charmAutoRadio.Checked;
+        };
         return group;
     }
 
@@ -186,6 +230,10 @@ internal sealed class MainForm : Form
         resultGrid.Columns.Add("Defense", "防御(初→最終)");
         foreach (var part in ArmorParts.Names) resultGrid.Columns.Add(part, part);
         resultGrid.Columns.Add("Charm", "お守り");
+        resultGrid.Columns.Add("Kinds", "出るお守り");
+        resultGrid.Columns.Add("Tables", "出るテーブル");
+        resultGrid.Columns["Kinds"]!.Visible = false;
+        resultGrid.Columns["Tables"]!.Visible = false;
         resultGrid.Columns.Add("Free", "空きスロット");
         resultGrid.Columns["No"]!.FillWeight = 40;
         resultGrid.Columns["Defense"]!.FillWeight = 85;
@@ -255,7 +303,37 @@ internal sealed class MainForm : Form
     // ───────── お守り ─────────
 
     /// <summary>保存済みのお守りを読み込む (以前の版で複数登録していた場合は先頭の 1 つを使う)。</summary>
-    private void LoadCharm() => charmEditor.SetCharm(CharmStore.Load().FirstOrDefault() ?? Charm.None);
+    private void LoadCharm()
+    {
+        charmEditor.SetCharm(CharmStore.Load().FirstOrDefault() ?? Charm.None);
+        UpdateCharmTablesLabel();
+    }
+
+    /// <summary>入力中のお守りと同じスキル・ポイント・スロットのお守りが、どのテーブルに出るか。</summary>
+    private async void UpdateCharmTablesLabel()
+    {
+        if (!catalogReady.IsCompleted && !charmEditor.Charm.IsNone)
+        {
+            // 実在するお守りの一覧は起動直後に裏で作っている (画面を止めない)
+            charmTablesLabel.Text = "このお守りが出るテーブルを計算中…";
+            await catalogReady;
+        }
+        var charm = charmEditor.Charm;
+        if (charm.IsNone)
+        {
+            charmTablesLabel.Text = "";
+            return;
+        }
+        var same = charmCatalog.FindSame(charm);
+        if (same.Count == 0)
+        {
+            charmTablesLabel.Text = "このお守りはどのテーブルにも出ません (スキルの順番・ポイント・スロットを確かめてください)";
+            return;
+        }
+        var tables = charmCatalog.TableNumbers.Where(t => same.Any(e => e.AppearsOn(t))).ToList();
+        var names = string.Join("・", same.Select(e => e.Name).Distinct());
+        charmTablesLabel.Text = $"このお守りが出るテーブル: {ResultTextFormatter.FormatTables(tables, charmCatalog.TableNumbers)} ({names})";
+    }
 
     private void SaveCharm()
     {
@@ -294,7 +372,7 @@ internal sealed class MainForm : Form
             return;
         }
 
-        var charm = charmEditor.Charm;
+        var autoCharm = charmAutoRadio.Checked;
         var condition = new SearchCondition
         {
             Requirements = requirements,
@@ -302,7 +380,7 @@ internal sealed class MainForm : Form
             IsFemale = genderBox.SelectedIndex == 1,
             MaxRarity = (int)rarityBox.Value,
             WeaponSlots = (int)weaponSlotBox.Value,
-            Charms = [charm],
+            Charms = autoCharm ? [] : [charmEditor.Charm],
             AvoidNegativeSkills = avoidNegativeBox.Checked,
             ExcludedArmorIds = [.. excludedArmorIds],
             MaxResults = (int)maxResultsBox.Value,
@@ -310,20 +388,57 @@ internal sealed class MainForm : Form
 
         searchCancellation = new CancellationTokenSource();
         var token = searchCancellation.Token;
-        var progress = new Progress<double>(p => progressBar.Value = (int)(p * 100));
+        var generation = ++searchGeneration;
+        var progress = new Progress<double>(p =>
+        {
+            // 進捗は画面のスレッドへ後から届くので、終わった検索・前の検索の分は無視する
+            if (isSearching && generation == searchGeneration) progressBar.Value = Math.Clamp((int)(p * 100), 0, 100);
+        });
         SetSearching(true);
         var watch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            var outcome = await Task.Run(() => searcher.Search(condition, progress, token), token);
-            results = outcome.Results;
+            int truncatedSolves;
+            if (autoCharm)
+            {
+                int? table = charmTableBox.SelectedIndex > 0 ? charmCatalog.TableNumbers[charmTableBox.SelectedIndex - 1] : null;
+                var (found, described) = await Task.Run(() =>
+                {
+                    var candidates = charmCatalog.RequirementsFor(requirements, table);
+                    var outcome = charmFinder.Find(condition, candidates, progress, token);
+                    var list = outcome.Suggestions.Take(condition.MaxResults)
+                        .Select(s => s with { Availability = charmCatalog.Describe(s.Requirement, requirements, table, CharmExampleCount) })
+                        .ToList();
+                    return (outcome, list);
+                }, token);
+                suggestions = described;
+                lastCharmTable = table;
+                results = suggestions.Select(s => s.Best).ToList();
+                truncatedSolves = found.TruncatedSolves;
+                var where = table is { } only ? $"テーブル {only} で" : "実在する";
+                statusLabel.Text = suggestions switch
+                {
+                    [] => $"{where}お守りでは成立しません",
+                    [{ Requirement.IsZero: true }] => "お守りなしで成立します",
+                    _ => $"必要なお守り {suggestions.Count} 通り{(table is { } shown ? $" (テーブル {shown})" : "")}",
+                };
+            }
+            else
+            {
+                var outcome = await Task.Run(() => searcher.Search(condition, progress, token), token);
+                suggestions = null;
+                results = outcome.Results;
+                truncatedSolves = outcome.TruncatedSolves;
+                statusLabel.Text = $"{results.Count} 件";
+            }
             lastCondition = condition;
-            statusLabel.Text = $"{results.Count} 件 ({watch.Elapsed.TotalSeconds:0.0} 秒)"
-                + (outcome.TruncatedSolves > 0 ? $"  ※珠の探索を {outcome.TruncatedSolves} 構成で打ち切り (見落としの可能性あり)" : "");
+            statusLabel.Text += $" ({watch.Elapsed.TotalSeconds:0.0} 秒)"
+                + (truncatedSolves > 0 ? $"  ※珠の探索を {truncatedSolves} 構成で打ち切り (見落としの可能性あり)" : "");
         }
         catch (OperationCanceledException)
         {
-            statusLabel.Text = "中止しました";
+            // 結果の一覧は前回の検索のまま残る (今回の条件の結果と見間違えないように書く)
+            statusLabel.Text = results.Count > 0 ? "中止しました (表示は前回の検索結果)" : "中止しました";
         }
         finally
         {
@@ -334,6 +449,7 @@ internal sealed class MainForm : Form
 
     private void SetSearching(bool searching)
     {
+        isSearching = searching;
         searchButton.Enabled = !searching;
         cancelButton.Enabled = searching;
         exportButton.Enabled = !searching && results.Count > 0;
@@ -344,24 +460,50 @@ internal sealed class MainForm : Form
     private void ShowResults()
     {
         exportButton.Enabled = results.Count > 0;
+        var autoCharm = suggestions != null;
+        resultGrid.Columns["Charm"]!.HeaderText = autoCharm ? "必要なお守り (以上)" : "お守り";
+        // 自動計算では必要なお守りの説明が長いので広げる
+        resultGrid.Columns["Charm"]!.FillWeight = autoCharm ? 170 : 100;
+        resultGrid.Columns["Kinds"]!.Visible = autoCharm;
+        resultGrid.Columns["Tables"]!.Visible = autoCharm;
         resultGrid.Rows.Clear();
         for (var i = 0; i < results.Count; i++)
         {
             var r = results[i];
             var row = new List<object> { i + 1, $"{r.Defense}→{r.MaxDefense}" };
             row.AddRange(r.Armors.Select(a => (object)a.Name));
-            row.Add(r.Charm.ToString());
+            if (suggestions != null)
+            {
+                var suggestion = suggestions[i];
+                var shown = !suggestion.Requirement.IsZero && suggestion.Availability != null;
+                row.Add(ResultTextFormatter.ShortRequirement(suggestion.Requirement, lastCondition!.Requirements));
+                row.Add(shown ? string.Join("・", suggestion.Availability!.Kinds.Select(k => k.Replace("お守り", ""))) : "");
+                row.Add(shown ? ResultTextFormatter.FormatTables(suggestion.Availability!.Tables, charmCatalog.TableNumbers) : "");
+            }
+            else
+            {
+                row.Add(r.Charm.ToString());
+                row.Add("");
+                row.Add("");
+            }
             row.Add(string.Join(" ", r.FreeSlots));
             resultGrid.Rows.Add(row.ToArray());
         }
-        if (results.Count == 0) detailBox.Text = "条件を満たす組み合わせが見つかりませんでした。\r\nレア度上限・武器スロット・お守りを見直してください。";
+        if (results.Count == 0)
+        {
+            detailBox.Text = autoCharm
+                ? "実在するお守りを使っても、条件を満たす組み合わせが見つかりませんでした。\r\nレア度上限・武器スロット・スキルを見直してください。"
+                : "条件を満たす組み合わせが見つかりませんでした。\r\nレア度上限・武器スロット・お守りを見直してください。";
+        }
     }
 
-    private SearchResult? SelectedResult()
+    private int SelectedIndex()
     {
         var index = resultGrid.CurrentRow?.Index ?? -1;
-        return index >= 0 && index < results.Count ? results[index] : null;
+        return index >= 0 && index < results.Count ? index : -1;
     }
+
+    private SearchResult? SelectedResult() => SelectedIndex() is var index and >= 0 ? results[index] : null;
 
     private void UpdateExcludedLabel() => excludedLabel.Text = excludedArmorIds.Count == 0
         ? ""
@@ -371,24 +513,25 @@ internal sealed class MainForm : Form
 
     private void ShowSelectedDetail()
     {
-        if (SelectedResult() is { } result) detailBox.Text = FormatSelected(result);
+        if (SelectedIndex() is var index and >= 0) detailBox.Text = FormatSelected(index);
     }
 
-    private string FormatSelected(SearchResult result) =>
-        ResultTextFormatter.FormatResult(result, lastCondition?.WeaponSlots ?? 0);
+    private string FormatSelected(int index) => suggestions != null
+        ? ResultTextFormatter.FormatSuggestion(suggestions[index], lastCondition!.Requirements, lastCondition.WeaponSlots, charmCatalog.TableNumbers)
+        : ResultTextFormatter.FormatResult(results[index], lastCondition?.WeaponSlots ?? 0);
 
     private void CopySelectedResult()
     {
-        if (SelectedResult() is not { } result) return;
-        Clipboard.SetText(FormatSelected(result));
+        if (SelectedIndex() is not (var index and >= 0)) return;
+        Clipboard.SetText(FormatSelected(index));
         statusLabel.Text = "選択中の結果をコピーしました";
     }
 
     private void SaveSelectedResult()
     {
-        if (SelectedResult() is not { } result) return;
-        var number = results.IndexOf(result) + 1;
-        var content = $"{AppTitle} v{AppVersion}  No.{number}{Environment.NewLine}{Environment.NewLine}{FormatSelected(result)}";
+        if (SelectedIndex() is not (var index and >= 0)) return;
+        var number = index + 1;
+        var content = $"{AppTitle} v{AppVersion}  No.{number}{Environment.NewLine}{Environment.NewLine}{FormatSelected(index)}";
         SaveText($"MH3G装備_No{number}_{DateTime.Now:yyyyMMdd_HHmm}.txt", content);
     }
 
@@ -396,7 +539,10 @@ internal sealed class MainForm : Form
     {
         if (lastCondition == null || results.Count == 0) return;
         var title = $"{AppTitle} v{AppVersion} 検索結果 ({DateTime.Now:yyyy-MM-dd HH:mm})";
-        SaveText($"MH3G検索結果_{DateTime.Now:yyyyMMdd_HHmm}.txt", ResultTextFormatter.FormatExport(lastCondition, results, title));
+        SaveText($"MH3G検索結果_{DateTime.Now:yyyyMMdd_HHmm}.txt",
+            ResultTextFormatter.FormatExport(lastCondition, results, title, suggestions == null
+                ? null
+                : new ResultTextFormatter.CharmSearchContext(suggestions, lastCharmTable, charmCatalog.TableNumbers)));
     }
 
     private void SaveText(string defaultFileName, string content)
