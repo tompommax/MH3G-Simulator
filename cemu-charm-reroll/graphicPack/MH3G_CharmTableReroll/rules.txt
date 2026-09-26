@@ -1,0 +1,15 @@
+[Definition]
+titleIds = 0005000010104D00
+name = "Charm Table Reroll"
+path = "Monster Hunter 3 Ultimate/Mods/Charm Table Reroll (JP 3G HD)"
+description = Re-rolls the charm table for every charm (or once per boot). Never picks the 5 cursed tables. For the Japanese Monster Hunter 3G HD Ver. only. / お守りのテーブルを、お守りごと (または起動ごと) にランダムに選び直します。呪われたテーブルは選びません。日本版 モンスターハンター3(トライ)G HD Ver. 専用です。
+version = 7
+
+[Preset]
+name = Every charm / お守りごと
+default = 1
+$everyCharm = 1
+
+[Preset]
+name = Once per boot / 起動ごと
+$everyCharm = 0
