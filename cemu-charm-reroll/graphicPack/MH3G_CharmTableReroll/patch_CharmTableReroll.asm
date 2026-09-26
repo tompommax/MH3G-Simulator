@@ -71,9 +71,11 @@ lwz r0, lo(_mh3gCharmReroll_Count)(r12)
 rlwinm r12, r0, 2, 27, 29
 addis r12, r12, ha(_mh3gCharmReroll_Log)
 stw r11, lo(_mh3gCharmReroll_Log)(r12)
-addi r0, r0, 1
+# count + 1 through r11 ("addi r0, r0, 1" would mean "li r0, 1": addi reads r0 as zero)
 lis r12, ha(_mh3gCharmReroll_Count)
-stw r0, lo(_mh3gCharmReroll_Count)(r12)
+lwz r11, lo(_mh3gCharmReroll_Count)(r12)
+addi r11, r11, 1
+stw r11, lo(_mh3gCharmReroll_Count)(r12)
 _mh3gCharmReroll_Exit:
 mr r29, r4
 blr
